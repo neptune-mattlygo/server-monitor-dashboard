@@ -1,0 +1,288 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ServerEditDialog } from './server-edit-dialog';
+import { useRouter } from 'next/navigation';
+
+type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
+type SortField = 'status' | 'name' | 'description' | 'url' | 'ip_address' | 'last_check_at' | 'response_time_ms';
+type SortDirection = 'asc' | 'desc';
+
+interface Server {
+  id: string;
+  name: string;
+  description: string | null;
+  url: string | null;
+  ip_address: string | null;
+  status: ServerStatus;
+  last_check_at: string | null;
+  response_time_ms: number | null;
+}
+
+interface Host {
+  id: string;
+  name: string;
+  location: string | null;
+  servers: Server[];
+}
+
+function getStatusBadgeVariant(status: ServerStatus): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' {
+  switch (status) {
+    case 'up':
+      return 'success';
+    case 'down':
+      return 'destructive';
+    case 'degraded':
+      return 'warning';
+    case 'maintenance':
+      return 'info';
+    default:
+      return 'secondary';
+  }
+}
+
+function getStatusIcon(status: ServerStatus): string {
+  switch (status) {
+    case 'up':
+      return '●';
+    case 'down':
+      return '●';
+    case 'degraded':
+      return '●';
+    case 'maintenance':
+      return '●';
+    default:
+      return '○';
+  }
+}
+
+function getStatusOrder(status: ServerStatus): number {
+  switch (status) {
+    case 'down': return 0;
+    case 'degraded': return 1;
+    case 'maintenance': return 2;
+    case 'up': return 3;
+    default: return 4;
+  }
+}
+
+export function HostServerTable({ host }: { host: Host }) {
+  const [sortField, setSortField] = useState<SortField>('status');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [selectedServer, setSelectedServer] = useState<Server | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const router = useRouter();
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedServers = useMemo(() => {
+    if (!host.servers || host.servers.length === 0) return [];
+
+    return [...host.servers].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'status':
+          aValue = getStatusOrder(a.status);
+          bValue = getStatusOrder(b.status);
+          break;
+        case 'name':
+          aValue = a.name?.toLowerCase() || '';
+          bValue = b.name?.toLowerCase() || '';
+          break;
+        case 'description':
+          aValue = a.description?.toLowerCase() || '';
+          bValue = b.description?.toLowerCase() || '';
+          break;
+        case 'url':
+          aValue = a.url?.toLowerCase() || '';
+          bValue = b.url?.toLowerCase() || '';
+          break;
+        case 'ip_address':
+          aValue = a.ip_address || '';
+          bValue = b.ip_address || '';
+          break;
+        case 'last_check_at':
+          aValue = a.last_check_at ? new Date(a.last_check_at).getTime() : 0;
+          bValue = b.last_check_at ? new Date(b.last_check_at).getTime() : 0;
+          break;
+        case 'response_time_ms':
+          aValue = a.response_time_ms || 0;
+          bValue = b.response_time_ms || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [host.servers, sortField, sortDirection]);
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <span className="ml-1 text-gray-400">↕</span>;
+    }
+    return <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>;
+  };
+
+  const handleRowClick = (server: Server) => {
+    setSelectedServer(server);
+    setDialogOpen(true);
+  };
+
+  const handleSave = async (updatedServer: Server) => {
+    try {
+      const response = await fetch(`/api/servers/${updatedServer.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: updatedServer.name,
+          description: updatedServer.description,
+          url: updatedServer.url,
+          ip_address: updatedServer.ip_address,
+          status: updatedServer.status,
+          response_time_ms: updatedServer.response_time_ms,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update server');
+      }
+
+      // Refresh the page to show updated data
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating server:', error);
+      throw error;
+    }
+  };
+
+  if (!host.servers || host.servers.length === 0) {
+    return <p className="text-sm text-gray-500 py-4">No servers in this host</p>;
+  }
+
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('status')}
+            >
+              Status <SortIcon field="status" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('name')}
+            >
+              Server Name <SortIcon field="name" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('description')}
+            >
+              Description <SortIcon field="description" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('url')}
+            >
+              URL <SortIcon field="url" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('ip_address')}
+            >
+              IP Address <SortIcon field="ip_address" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('last_check_at')}
+            >
+              Last Check <SortIcon field="last_check_at" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('response_time_ms')}
+            >
+              Response Time <SortIcon field="response_time_ms" />
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedServers.map((server) => (
+            <TableRow 
+              key={server.id}
+              onClick={() => handleRowClick(server)}
+              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <TableCell>
+                <Badge variant={getStatusBadgeVariant(server.status)} style={{ minWidth: '100px' }}>
+                  {getStatusIcon(server.status)} {server.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="font-medium">{server.name}</TableCell>
+              <TableCell>{server.description || '-'}</TableCell>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                {server.url ? (
+                  <a
+                    href={server.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    {server.url}
+                  </a>
+                ) : (
+                  '-'
+                )}
+              </TableCell>
+              <TableCell className="font-mono text-sm">
+                {server.ip_address || '-'}
+              </TableCell>
+              <TableCell>
+                {server.last_check_at
+                  ? new Date(server.last_check_at).toLocaleString()
+                  : '-'}
+              </TableCell>
+              <TableCell>
+                {server.response_time_ms !== null
+                  ? `${server.response_time_ms}ms`
+                  : '-'}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <ServerEditDialog
+        server={selectedServer}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSave={handleSave}
+      />
+    </>
+  );
+}
