@@ -45,10 +45,10 @@ async function getDashboardData() {
     const allServers = hosts?.flatMap(h => h.servers) || [];
     const summary = {
       total: allServers.length,
-      up: allServers.filter(s => s.status === 'up').length,
-      down: allServers.filter(s => s.status === 'down').length,
-      degraded: allServers.filter(s => s.status === 'degraded').length,
-      maintenance: allServers.filter(s => s.status === 'maintenance').length,
+      up: allServers.filter(s => s.current_status === 'up').length,
+      down: allServers.filter(s => s.current_status === 'down').length,
+      degraded: allServers.filter(s => s.current_status === 'degraded').length,
+      maintenance: allServers.filter(s => s.current_status === 'maintenance').length,
     };
 
     // Get recent events count (last 24 hours)

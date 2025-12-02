@@ -144,10 +144,11 @@ export function HostServerTable({ host, allHosts }: { host: Host; allHosts: Host
         },
         body: JSON.stringify({
           name: updatedServer.name,
-          host_id: updatedServer.host_id,
-          server_type: updatedServer.server_type,
+          description: updatedServer.description,
+          url: updatedServer.url,
           ip_address: updatedServer.ip_address,
-          current_status: updatedServer.current_status,
+          status: updatedServer.status,
+          response_time_ms: updatedServer.response_time_ms,
         }),
       });
 
@@ -174,9 +175,9 @@ export function HostServerTable({ host, allHosts }: { host: Host; allHosts: Host
           <TableRow>
             <TableHead 
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => handleSort('current_status')}
+              onClick={() => handleSort('status')}
             >
-              Status <SortIcon field="current_status" />
+              Status <SortIcon field="status" />
             </TableHead>
             <TableHead 
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -186,15 +187,33 @@ export function HostServerTable({ host, allHosts }: { host: Host; allHosts: Host
             </TableHead>
             <TableHead 
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => handleSort('server_type')}
+              onClick={() => handleSort('description')}
             >
-              Server Type <SortIcon field="server_type" />
+              Description <SortIcon field="description" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('url')}
+            >
+              URL <SortIcon field="url" />
             </TableHead>
             <TableHead 
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => handleSort('ip_address')}
             >
               IP Address <SortIcon field="ip_address" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('last_check_at')}
+            >
+              Last Check <SortIcon field="last_check_at" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('response_time_ms')}
+            >
+              Response Time <SortIcon field="response_time_ms" />
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -206,14 +225,38 @@ export function HostServerTable({ host, allHosts }: { host: Host; allHosts: Host
               className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               <TableCell>
-                <Badge variant={getStatusBadgeVariant(server.current_status)} style={{ minWidth: '100px' }}>
-                  {getStatusIcon(server.current_status)} {server.current_status}
+                <Badge variant={getStatusBadgeVariant(server.status)} style={{ minWidth: '100px' }}>
+                  {getStatusIcon(server.status)} {server.status}
                 </Badge>
               </TableCell>
               <TableCell className="font-medium">{server.name}</TableCell>
-              <TableCell>{server.server_type || '-'}</TableCell>
+              <TableCell>{server.description || '-'}</TableCell>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                {server.url ? (
+                  <a
+                    href={server.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    {server.url}
+                  </a>
+                ) : (
+                  '-'
+                )}
+              </TableCell>
               <TableCell className="font-mono text-sm">
                 {server.ip_address || '-'}
+              </TableCell>
+              <TableCell>
+                {server.last_check_at
+                  ? new Date(server.last_check_at).toLocaleString()
+                  : '-'}
+              </TableCell>
+              <TableCell>
+                {server.response_time_ms !== null
+                  ? `${server.response_time_ms}ms`
+                  : '-'}
               </TableCell>
             </TableRow>
           ))}

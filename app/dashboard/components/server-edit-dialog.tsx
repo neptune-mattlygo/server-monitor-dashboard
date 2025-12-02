@@ -13,18 +13,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
+
+interface Host {
+  id: string;
+  name: string;
+}
 
 interface Server {
   id: string;
   name: string;
-  description: string | null;
-  url: string | null;
+  host_id: string | null;
+  server_type: string | null;
   ip_address: string | null;
-  status: ServerStatus;
-  last_check_at: string | null;
-  response_time_ms: number | null;
+  current_status: ServerStatus;
 }
 
 interface ServerEditDialogProps {
@@ -32,6 +42,7 @@ interface ServerEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (server: Server) => Promise<void>;
+  hosts: Host[];
 }
 
 function getStatusBadgeVariant(status: ServerStatus): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' {
@@ -49,7 +60,7 @@ function getStatusBadgeVariant(status: ServerStatus): 'default' | 'secondary' | 
   }
 }
 
-export function ServerEditDialog({ server, open, onOpenChange, onSave }: ServerEditDialogProps) {
+export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: ServerEditDialogProps) {
   const [editedServer, setEditedServer] = useState<Server | null>(server);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,12 +108,12 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave }: ServerE
           <div className="grid gap-2">
             <Label htmlFor="status">Status</Label>
             <div className="flex gap-2 flex-wrap">
-              {(['up', 'down', 'degraded', 'maintenance', 'unknown'] as const).map((status) => (
+              {(['up', 'down', 'degraded', 'maintenance'] as const).map((status) => (
                 <Badge
                   key={status}
-                  variant={editedServer.status === status ? getStatusBadgeVariant(status) : 'outline'}
+                  variant={editedServer.current_status === status ? getStatusBadgeVariant(status) : 'outline'}
                   className="cursor-pointer capitalize"
-                  onClick={() => setEditedServer({ ...editedServer, status })}
+                  onClick={() => setEditedServer({ ...editedServer, current_status: status })}
                 >
                   {status}
                 </Badge>
@@ -121,23 +132,31 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave }: ServerE
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={editedServer.description || ''}
-              onChange={(e) => setEditedServer({ ...editedServer, description: e.target.value })}
-              placeholder="Main application server"
-            />
+            <Label htmlFor="host">Region / Host</Label>
+            <Select
+              value={editedServer.host_id || ''}
+              onValueChange={(value) => setEditedServer({ ...editedServer, host_id: value })}
+            >
+              <SelectTrigger id="host">
+                <SelectValue placeholder="Select a region" />
+              </SelectTrigger>
+              <SelectContent>
+                {hosts.map((host) => (
+                  <SelectItem key={host.id} value={host.id}>
+                    {host.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="url">URL</Label>
+            <Label htmlFor="server_type">Server Type</Label>
             <Input
-              id="url"
-              type="url"
-              value={editedServer.url || ''}
-              onChange={(e) => setEditedServer({ ...editedServer, url: e.target.value })}
-              placeholder="https://example.com"
+              id="server_type"
+              value={editedServer.server_type || ''}
+              onChange={(e) => setEditedServer({ ...editedServer, server_type: e.target.value })}
+              placeholder="Web Server, Database, API"
             />
           </div>
 
@@ -150,29 +169,6 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave }: ServerE
               placeholder="192.168.1.100"
               className="font-mono"
             />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="response_time">Response Time (ms)</Label>
-            <Input
-              id="response_time"
-              type="number"
-              value={editedServer.response_time_ms || ''}
-              onChange={(e) => setEditedServer({ 
-                ...editedServer, 
-                response_time_ms: e.target.value ? parseInt(e.target.value) : null 
-              })}
-              placeholder="150"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label>Last Check</Label>
-            <div className="text-sm text-muted-foreground">
-              {editedServer.last_check_at
-                ? new Date(editedServer.last_check_at).toLocaleString()
-                : 'Never checked'}
-            </div>
           </div>
 
           <div className="grid gap-2">

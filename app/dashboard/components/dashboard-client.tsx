@@ -2,19 +2,20 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { HostServerTable } from './host-server-table';
+import { AddServerDialog } from './add-server-dialog';
+import { AddHostDialog } from './add-host-dialog';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
 interface Server {
   id: string;
   name: string;
-  description: string | null;
-  url: string | null;
+  host_id: string | null;
+  server_type: string | null;
   ip_address: string | null;
-  status: ServerStatus;
-  last_check_at: string | null;
-  response_time_ms: number | null;
+  current_status: ServerStatus;
 }
 
 interface Host {
@@ -37,6 +38,8 @@ interface DashboardClientProps {
 
 export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const [statusFilter, setStatusFilter] = useState<ServerStatus | 'all'>('all');
+  const [addServerDialogOpen, setAddServerDialogOpen] = useState(false);
+  const [addHostDialogOpen, setAddHostDialogOpen] = useState(false);
 
   const handleFilterClick = (status: ServerStatus | 'all') => {
     setStatusFilter(statusFilter === status ? 'all' : status);
@@ -118,6 +121,16 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
         </div>
       )}
 
+      {/* Action Buttons */}
+      <div className="flex gap-4 mb-6">
+        <Button onClick={() => setAddServerDialogOpen(true)}>
+          Add Server
+        </Button>
+        <Button variant="outline" onClick={() => setAddHostDialogOpen(true)}>
+          Add Region / Host
+        </Button>
+      </div>
+
       {/* Servers by Host */}
       {hosts && hosts.length > 0 ? (
         <div className="space-y-6">
@@ -126,7 +139,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
               ...host,
               servers: statusFilter === 'all' 
                 ? host.servers 
-                : host.servers.filter(s => s.status === statusFilter)
+                : host.servers.filter(s => s.current_status === statusFilter)
             };
 
             // Skip hosts with no servers after filtering
@@ -141,7 +154,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                   )}
                 </CardHeader>
                 <CardContent>
-                  <HostServerTable host={filteredHost} />
+                  <HostServerTable host={filteredHost} allHosts={hosts} />
                 </CardContent>
               </Card>
             );
@@ -179,6 +192,17 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Dialogs */}
+      <AddServerDialog 
+        open={addServerDialogOpen} 
+        onOpenChange={setAddServerDialogOpen}
+        hosts={hosts}
+      />
+      <AddHostDialog 
+        open={addHostDialogOpen} 
+        onOpenChange={setAddHostDialogOpen}
+      />
     </>
   );
 }
