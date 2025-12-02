@@ -13,17 +13,37 @@ export async function POST(request: NextRequest) {
     // Verify authorization
     const authHeader = request.headers.get('authorization');
     const expectedToken = process.env.POLLING_SECRET;
+    const cronSecret = request.headers.get('x-vercel-cron-secret');
+
+    console.log('[UptimeRobot] Debug:', {
+      authHeader,
+      expectedToken,
+      expectedTokenLength: expectedToken?.length,
+      authHeaderLength: authHeader?.length,
+      match: authHeader === `Bearer ${expectedToken}`,
+    });
 
     if (!expectedToken) {
       return NextResponse.json(
-        { error: 'Polling not configured' },
+        { error: 'Polling not configured', message: 'POLLING_SECRET environment variable not set' },
         { status: 503 }
       );
     }
 
-    if (authHeader !== `Bearer ${expectedToken}`) {
+    // Allow requests from Vercel Cron (they include x-vercel-cron-secret)
+    const isVercelCron = cronSecret === process.env.CRON_SECRET;
+    const isBearerAuth = authHeader === `Bearer ${expectedToken}`;
+
+    if (!isVercelCron && !isBearerAuth) {
+      console.log('[UptimeRobot] Unauthorized request:', {
+        hasAuthHeader: !!authHeader,
+        hasCronSecret: !!cronSecret,
+        isVercelCron,
+        isBearerAuth,
+      });
+      
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized', message: 'Invalid or missing authorization' },
         { status: 401 }
       );
     }
@@ -54,7 +74,7 @@ export async function POST(request: NextRequest) {
         .insert({
           name: 'UptimeRobot',
           location: 'Cloud Monitoring',
-          provider: 'UptimeRobot',
+          description: 'Servers monitored by UptimeRobot',
         })
         .select()
         .single();
