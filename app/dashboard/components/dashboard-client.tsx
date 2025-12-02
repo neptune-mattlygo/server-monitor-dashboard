@@ -8,7 +8,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { HostServerTable } from './host-server-table';
 import { AddServerDialog } from './add-server-dialog';
 import { AddHostDialog } from './add-host-dialog';
-import { Server, Plus, Database } from 'lucide-react';
+import { EditHostDialog } from './edit-host-dialog';
+import { Server, Plus, Database, Pencil } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -25,6 +26,7 @@ interface Host {
   id: string;
   name: string;
   location: string | null;
+  provider: string | null;
   servers: Server[];
 }
 
@@ -43,9 +45,16 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const [statusFilter, setStatusFilter] = useState<ServerStatus | 'all'>('all');
   const [addServerDialogOpen, setAddServerDialogOpen] = useState(false);
   const [addHostDialogOpen, setAddHostDialogOpen] = useState(false);
+  const [editHostDialogOpen, setEditHostDialogOpen] = useState(false);
+  const [selectedHost, setSelectedHost] = useState<Host | null>(null);
 
   const handleFilterClick = (status: ServerStatus | 'all') => {
     setStatusFilter(statusFilter === status ? 'all' : status);
+  };
+
+  const handleEditHost = (host: Host) => {
+    setSelectedHost(host);
+    setEditHostDialogOpen(true);
   };
 
   return (
@@ -143,11 +152,11 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
             <TooltipTrigger asChild>
               <Button variant="outline" onClick={() => setAddHostDialogOpen(true)} className="gap-2">
                 <Database className="h-4 w-4" />
-                Add Region / Host
+                Add Host
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Create a new host or region to group servers</p>
+              <p>Create a new host to group servers</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -226,6 +235,11 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
       <AddHostDialog 
         open={addHostDialogOpen} 
         onOpenChange={setAddHostDialogOpen}
+      />
+      <EditHostDialog
+        host={selectedHost}
+        open={editHostDialogOpen}
+        onOpenChange={setEditHostDialogOpen}
       />
     </>
   );

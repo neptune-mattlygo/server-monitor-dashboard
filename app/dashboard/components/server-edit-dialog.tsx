@@ -132,13 +132,13 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="host">Region / Host</Label>
+            <Label htmlFor="host">Host</Label>
             <Select
               value={editedServer.host_id || ''}
               onValueChange={(value) => setEditedServer({ ...editedServer, host_id: value })}
             >
               <SelectTrigger id="host">
-                <SelectValue placeholder="Select a region" />
+                <SelectValue placeholder="Select a host" />
               </SelectTrigger>
               <SelectContent>
                 {hosts.map((host) => (

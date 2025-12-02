@@ -28,6 +28,7 @@ interface Host {
   id: string;
   name: string;
   location: string | null;
+  provider: string | null;
   servers: Server[];
 }
 

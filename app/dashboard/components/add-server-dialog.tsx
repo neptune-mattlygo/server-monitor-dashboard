@@ -116,14 +116,14 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="host">Region / Host *</Label>
+              <Label htmlFor="host">Host *</Label>
               <Select
                 value={formData.host_id}
                 onValueChange={(value) => setFormData({ ...formData, host_id: value })}
                 required
               >
                 <SelectTrigger id="host">
-                  <SelectValue placeholder="Select a region" />
+                  <SelectValue placeholder="Select a host" />
                 </SelectTrigger>
                 <SelectContent>
                   {hosts.map((host) => (
