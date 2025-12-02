@@ -7,15 +7,35 @@ const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
 
+// Simple env parser (no dotenv dependency needed)
+function loadEnv() {
+  const envPath = path.join(__dirname, '../.env.local');
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  const env = {};
+  
+  envContent.split('\n').forEach(line => {
+    const match = line.match(/^([^#=]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      const value = match[2].trim().replace(/^["']|["']$/g, '');
+      env[key] = value;
+    }
+  });
+  
+  return env;
+}
+
 async function runMigration() {
   // Load environment variables
-  require('dotenv').config({ path: '.env.local' });
+  const env = loadEnv();
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     console.error('Missing Supabase credentials in .env.local');
+    console.error('Found NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl);
+    console.error('Found SUPABASE_SERVICE_ROLE_KEY:', supabaseKey ? 'Yes' : 'No');
     process.exit(1);
   }
 
