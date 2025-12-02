@@ -1,9 +1,15 @@
 import { redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth/session';
 import { DashboardClient } from './components/dashboard-client';
+import { DashboardHeader } from './components/dashboard-header';
+import { DashboardSkeleton } from './components/dashboard-skeleton';
+import { Suspense } from 'react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -82,63 +88,29 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="border-b bg-white dark:bg-gray-800">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-6">
-            <h1 className="text-2xl font-bold">Server Monitor Dashboard</h1>
-            <nav className="flex gap-4">
-              <a 
-                href="/dashboard" 
-                className="text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-blue-600 pb-1"
-              >
-                Dashboard
-              </a>
-              <a 
-                href="/events" 
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-              >
-                Events
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {user.display_name || user.email}
-            </span>
-            <Badge variant="outline" className="capitalize">
-              {user.role}
-            </Badge>
-            <form action="/api/auth/local/logout" method="POST">
-              <button
-                type="submit"
-                className="rounded-md bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
-              >
-                Logout
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader user={user} />
 
       <main className="container mx-auto px-4 py-8">
-        {dashboardData && (
-          <DashboardClient 
-            hosts={dashboardData.hosts} 
-            summary={dashboardData.summary}
-          />
-        )}
+        <Suspense fallback={<DashboardSkeleton />}>
+          {dashboardData && (
+            <DashboardClient 
+              hosts={dashboardData.hosts} 
+              summary={dashboardData.summary}
+            />
+          )}
 
-        {/* Recent Events */}
-        {dashboardData?.recentEventCount !== undefined && dashboardData.recentEventCount > 0 && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                {dashboardData.recentEventCount} events in the last 24 hours
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
+          {/* Recent Events */}
+          {dashboardData?.recentEventCount !== undefined && dashboardData.recentEventCount > 0 && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>
+                  {dashboardData.recentEventCount} events in the last 24 hours
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
+        </Suspense>
       </main>
     </div>
   );

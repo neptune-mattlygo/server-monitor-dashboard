@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HostServerTable } from './host-server-table';
 import { AddServerDialog } from './add-server-dialog';
 import { AddHostDialog } from './add-host-dialog';
+import { Server, Plus, Database } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -122,14 +125,35 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-4 mb-6">
-        <Button onClick={() => setAddServerDialogOpen(true)}>
-          Add Server
-        </Button>
-        <Button variant="outline" onClick={() => setAddHostDialogOpen(true)}>
-          Add Region / Host
-        </Button>
-      </div>
+      <TooltipProvider>
+        <div className="flex gap-3 mb-6">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={() => setAddServerDialogOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Server
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create a new server to monitor</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" onClick={() => setAddHostDialogOpen(true)} className="gap-2">
+                <Database className="h-4 w-4" />
+                Add Region / Host
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create a new host or region to group servers</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
+
+      <Separator className="my-6" />
 
       {/* Servers by Host */}
       {hosts && hosts.length > 0 ? (

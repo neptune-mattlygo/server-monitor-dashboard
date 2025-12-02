@@ -3,6 +3,11 @@
 import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import {
   Table,
   TableBody,
   TableCell,
@@ -12,6 +17,7 @@ import {
 } from '@/components/ui/table';
 import { ServerEditDialog } from './server-edit-dialog';
 import { useRouter } from 'next/navigation';
+import { Server as ServerIcon, MapPin, Globe } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 type SortField = 'current_status' | 'name' | 'server_type' | 'ip_address';
@@ -210,7 +216,42 @@ export function HostServerTable({ host, allHosts }: { host: Host; allHosts: Host
                   {getStatusIcon(server.current_status)} {server.current_status}
                 </Badge>
               </TableCell>
-              <TableCell className="font-medium">{server.name}</TableCell>
+              <TableCell className="font-medium">
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <span className="hover:underline">{server.name}</span>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <ServerIcon className="h-4 w-4 text-gray-500" />
+                        <h4 className="font-semibold">{server.name}</h4>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-3 w-3 text-gray-500" />
+                          <span className="text-gray-600 dark:text-gray-400">
+                            Host: {host.name}
+                          </span>
+                        </div>
+                        {host.location && (
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-3 w-3 text-gray-500" />
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {host.location}
+                            </span>
+                          </div>
+                        )}
+                        <div className="pt-1">
+                          <Badge variant={getStatusBadgeVariant(server.current_status)}>
+                            {server.current_status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              </TableCell>
               <TableCell>{server.server_type || '-'}</TableCell>
               <TableCell className="font-mono text-sm">
                 {server.ip_address || '-'}
