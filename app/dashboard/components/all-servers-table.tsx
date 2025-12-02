@@ -1,0 +1,265 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ServerEditDialog } from './server-edit-dialog';
+import { useRouter } from 'next/navigation';
+import { Server as ServerIcon, MapPin, Globe, ChevronUp, ChevronDown } from 'lucide-react';
+
+type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
+type SortField = 'current_status' | 'name' | 'server_type' | 'ip_address' | 'host_name';
+type SortDirection = 'asc' | 'desc';
+
+interface Server {
+  id: string;
+  name: string;
+  host_id: string | null;
+  server_type: string | null;
+  ip_address: string | null;
+  current_status: ServerStatus;
+  host_name?: string;
+  host_location?: string | null;
+}
+
+interface AllServersTableProps {
+  servers: Server[];
+  statusFilter: ServerStatus | 'all';
+  hosts: Array<{ id: string; name: string }>;
+}
+
+export function AllServersTable({ servers, statusFilter, hosts }: AllServersTableProps) {
+  const router = useRouter();
+  const [selectedServer, setSelectedServer] = useState<Server | null>(null);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="inline h-4 w-4" /> : 
+      <ChevronDown className="inline h-4 w-4" />;
+  };
+
+  const filteredServers = useMemo(() => {
+    if (statusFilter === 'all') return servers;
+    return servers.filter(s => s.current_status === statusFilter);
+  }, [servers, statusFilter]);
+
+  const sortedServers = useMemo(() => {
+    return [...filteredServers].sort((a, b) => {
+      let aValue: string | number = '';
+      let bValue: string | number = '';
+
+      switch (sortField) {
+        case 'current_status':
+          aValue = a.current_status;
+          bValue = b.current_status;
+          break;
+        case 'name':
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case 'server_type':
+          aValue = a.server_type || '';
+          bValue = b.server_type || '';
+          break;
+        case 'ip_address':
+          aValue = a.ip_address || '';
+          bValue = b.ip_address || '';
+          break;
+        case 'host_name':
+          aValue = a.host_name || '';
+          bValue = b.host_name || '';
+          break;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredServers, sortField, sortDirection]);
+
+  const getStatusBadgeVariant = (status: ServerStatus): 'success' | 'destructive' | 'warning' | 'secondary' | 'default' => {
+    switch (status) {
+      case 'up': return 'success';
+      case 'down': return 'destructive';
+      case 'degraded': return 'warning';
+      case 'maintenance': return 'secondary';
+      default: return 'default';
+    }
+  };
+
+  const getStatusIcon = (status: ServerStatus) => {
+    switch (status) {
+      case 'up': return '✓';
+      case 'down': return '✗';
+      case 'degraded': return '⚠';
+      case 'maintenance': return '🔧';
+      default: return '?';
+    }
+  };
+
+  const handleRowClick = (server: Server) => {
+    setSelectedServer(server);
+  };
+
+  const handleSave = async (updatedServer: Server) => {
+    try {
+      const response = await fetch(`/api/servers/${updatedServer.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: updatedServer.name,
+          host_id: updatedServer.host_id,
+          server_type: updatedServer.server_type,
+          ip_address: updatedServer.ip_address,
+          current_status: updatedServer.current_status,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update server');
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating server:', error);
+      throw error;
+    }
+  };
+
+  if (sortedServers.length === 0) {
+    return <p className="text-sm text-gray-500 py-4">No servers found</p>;
+  }
+
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('current_status')}
+            >
+              Status <SortIcon field="current_status" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('name')}
+            >
+              Server Name <SortIcon field="name" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('host_name')}
+            >
+              Host <SortIcon field="host_name" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('server_type')}
+            >
+              Server Type <SortIcon field="server_type" />
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleSort('ip_address')}
+            >
+              IP Address <SortIcon field="ip_address" />
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedServers.map((server) => (
+            <TableRow 
+              key={server.id}
+              onClick={() => handleRowClick(server)}
+              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <TableCell>
+                <Badge variant={getStatusBadgeVariant(server.current_status)} style={{ minWidth: '100px' }}>
+                  {getStatusIcon(server.current_status)} {server.current_status}
+                </Badge>
+              </TableCell>
+              <TableCell className="font-medium">
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <span className="hover:underline">{server.name}</span>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <ServerIcon className="h-4 w-4 text-gray-500" />
+                        <h4 className="font-semibold">{server.name}</h4>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        {server.host_name && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3 w-3 text-gray-500" />
+                            <span className="text-gray-600 dark:text-gray-400">
+                              Host: {server.host_name}
+                            </span>
+                          </div>
+                        )}
+                        {server.host_location && (
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-3 w-3 text-gray-500" />
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {server.host_location}
+                            </span>
+                          </div>
+                        )}
+                        <div className="pt-1">
+                          <Badge variant={getStatusBadgeVariant(server.current_status)}>
+                            {server.current_status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              </TableCell>
+              <TableCell>{server.host_name || '-'}</TableCell>
+              <TableCell>{server.server_type || '-'}</TableCell>
+              <TableCell className="font-mono text-sm">
+                {server.ip_address || '-'}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <ServerEditDialog
+        server={selectedServer}
+        open={!!selectedServer}
+        onOpenChange={(open) => !open && setSelectedServer(null)}
+        onSave={handleSave}
+        hosts={hosts}
+      />
+    </>
+  );
+}

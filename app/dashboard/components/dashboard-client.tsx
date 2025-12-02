@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HostServerTable } from './host-server-table';
+import { AllServersTable } from './all-servers-table';
 import { AddServerDialog } from './add-server-dialog';
 import { AddHostDialog } from './add-host-dialog';
 import { EditHostDialog } from './edit-host-dialog';
-import { Server, Plus, Database, Pencil } from 'lucide-react';
+import { Server, Plus, Database, Pencil, LayoutGrid, List } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -43,6 +44,7 @@ interface DashboardClientProps {
 
 export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const [statusFilter, setStatusFilter] = useState<ServerStatus | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'grouped' | 'all'>('grouped');
   const [addServerDialogOpen, setAddServerDialogOpen] = useState(false);
   const [addHostDialogOpen, setAddHostDialogOpen] = useState(false);
   const [editHostDialogOpen, setEditHostDialogOpen] = useState(false);
@@ -133,9 +135,42 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
         </div>
       )}
 
-      {/* Action Buttons */}
+      {/* View Toggle and Action Buttons */}
       <TooltipProvider>
-        <div className="flex gap-3 mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === 'grouped' ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setViewMode('grouped')}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Grouped by host</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === 'all' ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setViewMode('all')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>All servers list</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          
+          <div className="flex gap-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button onClick={() => setAddServerDialogOpen(true)} className="gap-2">
@@ -159,13 +194,14 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
               <p>Create a new host to group servers</p>
             </TooltipContent>
           </Tooltip>
+          </div>
         </div>
       </TooltipProvider>
 
       <Separator className="my-6" />
 
-      {/* Servers by Host */}
-      {hosts && hosts.length > 0 ? (
+      {/* Grouped View - Servers by Host */}
+      {viewMode === 'grouped' && hosts && hosts.length > 0 ? (
         <div className="space-y-6">
           {hosts.map((host) => {
             const filteredHost = {
@@ -181,10 +217,29 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
             return (
               <Card key={host.id}>
                 <CardHeader>
-                  <CardTitle>{host.name}</CardTitle>
-                  {host.location && (
-                    <CardDescription>{host.location}</CardDescription>
-                  )}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle>{host.name}</CardTitle>
+                      {host.location && (
+                        <CardDescription>{host.location}</CardDescription>
+                      )}
+                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditHost(host)}
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Edit host</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <HostServerTable host={filteredHost} allHosts={hosts} />
@@ -193,7 +248,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
             );
           })}
         </div>
-      ) : (
+      ) : viewMode === 'grouped' ? (
         <Card>
           <CardHeader>
             <CardTitle>No Servers Found</CardTitle>
@@ -222,6 +277,29 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* All Servers View */}
+      {viewMode === 'all' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>All Servers</CardTitle>
+            <CardDescription>
+              Complete list of all monitored servers
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AllServersTable 
+              servers={hosts.flatMap(h => h.servers.map(s => ({
+                ...s,
+                host_name: h.name,
+                host_location: h.location
+              })))}
+              statusFilter={statusFilter}
+              hosts={hosts}
+            />
           </CardContent>
         </Card>
       )}
