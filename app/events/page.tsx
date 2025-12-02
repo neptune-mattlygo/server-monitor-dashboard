@@ -1,16 +1,9 @@
 import { redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth/session';
+import { EventsTableClient } from './components/events-table-client';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -26,43 +19,8 @@ interface ServerEvent {
   created_at: string;
   server: {
     name: string;
-    url: string | null;
+    ip_address: string | null;
   };
-}
-
-function getEventBadgeVariant(eventType: string): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' {
-  switch (eventType) {
-    case 'status_change':
-    case 'server_up':
-    case 'monitor_up':
-      return 'success';
-    case 'server_down':
-    case 'monitor_down':
-      return 'destructive';
-    case 'degraded':
-    case 'slow_response':
-      return 'warning';
-    case 'maintenance_start':
-    case 'maintenance_end':
-      return 'info';
-    default:
-      return 'secondary';
-  }
-}
-
-function getStatusBadgeVariant(status: ServerStatus): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' {
-  switch (status) {
-    case 'up':
-      return 'success';
-    case 'down':
-      return 'destructive';
-    case 'degraded':
-      return 'warning';
-    case 'maintenance':
-      return 'info';
-    default:
-      return 'secondary';
-  }
 }
 
 async function getRecentEvents() {
@@ -73,7 +31,7 @@ async function getRecentEvents() {
         *,
         server:servers (
           name,
-          url
+          ip_address
         )
       `)
       .order('created_at', { ascending: false })
@@ -150,86 +108,7 @@ export default async function EventsPage() {
           </CardHeader>
           <CardContent>
             {events.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Timestamp</TableHead>
-                    <TableHead>Server</TableHead>
-                    <TableHead>Event Type</TableHead>
-                    <TableHead>Status Change</TableHead>
-                    <TableHead>Response Time</TableHead>
-                    <TableHead>Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {events.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell className="text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(event.created_at).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{event.server?.name || 'Unknown Server'}</span>
-                          {event.server?.url && (
-                            <a
-                              href={event.server.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline dark:text-blue-400"
-                            >
-                              {event.server.url}
-                            </a>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getEventBadgeVariant(event.event_type)} className="capitalize">
-                          {event.event_type.replace(/_/g, ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {event.old_status && event.new_status ? (
-                          <div className="flex items-center gap-2">
-                            <Badge variant={getStatusBadgeVariant(event.old_status)} className="capitalize">
-                              {event.old_status}
-                            </Badge>
-                            <span className="text-gray-400">→</span>
-                            <Badge variant={getStatusBadgeVariant(event.new_status)} className="capitalize">
-                              {event.new_status}
-                            </Badge>
-                          </div>
-                        ) : event.new_status ? (
-                          <Badge variant={getStatusBadgeVariant(event.new_status)} className="capitalize">
-                            {event.new_status}
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {event.response_time_ms !== null ? `${event.response_time_ms}ms` : '-'}
-                      </TableCell>
-                      <TableCell className="max-w-xs">
-                        {event.error_message && (
-                          <span className="text-sm text-red-600 dark:text-red-400">
-                            {event.error_message}
-                          </span>
-                        )}
-                        {event.metadata && Object.keys(event.metadata).length > 0 && (
-                          <details className="text-xs text-gray-600 dark:text-gray-400">
-                            <summary className="cursor-pointer hover:text-gray-900 dark:hover:text-gray-200">
-                              View metadata
-                            </summary>
-                            <pre className="mt-2 overflow-auto bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                              {JSON.stringify(event.metadata, null, 2)}
-                            </pre>
-                          </details>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <EventsTableClient events={events} />
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-600 dark:text-gray-400">No events recorded yet</p>
