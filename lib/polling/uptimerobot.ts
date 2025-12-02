@@ -15,6 +15,7 @@ interface UptimeRobotMonitor {
   keyword_value?: string;
   port?: string;
   interval: number;
+  mwindows?: Array<number>; // Monitor group IDs
   response_times?: Array<{
     datetime: number;
     value: number;
@@ -30,9 +31,15 @@ interface UptimeRobotMonitor {
   }>;
 }
 
+interface UptimeRobotMWindow {
+  id: number;
+  friendly_name: string;
+}
+
 interface UptimeRobotResponse {
   stat: 'ok' | 'fail';
   monitors?: UptimeRobotMonitor[];
+  mwindows?: UptimeRobotMWindow[];
   error?: {
     type: string;
     message: string;
@@ -79,6 +86,7 @@ export class UptimeRobotPoller {
           log_limit: 2, // Last 2 log entries
           response_times: 1, // Include response times
           response_times_limit: 1, // Last response time only
+          mwindows: 1, // Include monitor groups
         }),
       });
 
@@ -92,6 +100,11 @@ export class UptimeRobotPoller {
         throw new Error(`UptimeRobot API error: ${data.error?.message || 'Unknown error'}`);
       }
 
+      // Log first monitor to see structure
+      if (data.monitors && data.monitors.length > 0) {
+        console.log('[UptimeRobot] Sample monitor structure:', JSON.stringify(data.monitors[0], null, 2));
+      }
+
       return data.monitors || [];
     } catch (error) {
       console.error('Failed to fetch UptimeRobot monitors:', error);
@@ -100,9 +113,45 @@ export class UptimeRobotPoller {
   }
 
   /**
+   * Fetch monitor groups (mwindows) from UptimeRobot
+   */
+  async fetchMWindows(): Promise<UptimeRobotMWindow[]> {
+    try {
+      const response = await fetch('https://api.uptimerobot.com/v2/getMWindows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+        },
+        body: JSON.stringify({
+          api_key: this.apiKey,
+          format: 'json',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`UptimeRobot API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data: UptimeRobotResponse = await response.json();
+
+      if (data.stat === 'fail') {
+        throw new Error(`UptimeRobot API error: ${data.error?.message || 'Unknown error'}`);
+      }
+
+      console.log('[UptimeRobot] getMWindows response:', JSON.stringify(data, null, 2));
+
+      return data.mwindows || [];
+    } catch (error) {
+      console.error('Failed to fetch UptimeRobot monitor groups:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Convert UptimeRobot monitor to our server format
    */
-  transformMonitor(monitor: UptimeRobotMonitor) {
+  transformMonitor(monitor: UptimeRobotMonitor, mwindowIds?: number[]) {
     const status = this.mapStatus(monitor.status);
     const responseTime = monitor.response_times?.[0]?.value || null;
     const lastLog = monitor.logs?.[0];
@@ -115,6 +164,7 @@ export class UptimeRobotPoller {
       current_status: status,
       last_check_at: lastLog ? new Date(lastLog.datetime * 1000).toISOString() : null,
       response_time_ms: responseTime,
+      mwindow_ids: mwindowIds || [],
       metadata: {
         monitor_id: monitor.id,
         interval: monitor.interval,

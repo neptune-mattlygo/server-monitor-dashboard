@@ -50,31 +50,64 @@ export async function POST(request: NextRequest) {
 
     // Initialize poller
     const poller = createUptimeRobotPoller();
-    const monitors = await poller.fetchMonitors();
+    const [monitors, mwindows] = await Promise.all([
+      poller.fetchMonitors(),
+      poller.fetchMWindows(),
+    ]);
 
-    console.log(`[UptimeRobot] Fetched ${monitors.length} monitors`);
+    console.log(`[UptimeRobot] Fetched ${monitors.length} monitors and ${mwindows.length} groups`);
 
     let created = 0;
     let updated = 0;
     let errors = 0;
 
-    // Get default host for UptimeRobot servers
+    // Create a map of mwindow ID to host ID
+    const mwindowToHostId = new Map<number, string>();
+
+    // Create or get hosts for each monitor group
+    for (const mwindow of mwindows) {
+      const { data: existingHost } = await supabaseAdmin
+        .from('hosts')
+        .select('id')
+        .eq('name', mwindow.friendly_name)
+        .single();
+
+      if (existingHost) {
+        mwindowToHostId.set(mwindow.id, existingHost.id);
+      } else {
+        const { data: newHost, error: hostError } = await supabaseAdmin
+          .from('hosts')
+          .insert({
+            name: mwindow.friendly_name,
+            location: 'UptimeRobot Group',
+            description: `Monitor group from UptimeRobot`,
+          })
+          .select()
+          .single();
+
+        if (!hostError && newHost) {
+          mwindowToHostId.set(mwindow.id, newHost.id);
+          console.log(`[UptimeRobot] Created host: ${mwindow.friendly_name}`);
+        }
+      }
+    }
+
+    // Get or create default host for monitors without groups
     const { data: defaultHost } = await supabaseAdmin
       .from('hosts')
       .select('id')
-      .eq('name', 'UptimeRobot')
+      .eq('name', 'UptimeRobot (Ungrouped)')
       .single();
 
-    let hostId = defaultHost?.id;
+    let defaultHostId = defaultHost?.id;
 
-    // Create default host if it doesn't exist
-    if (!hostId) {
+    if (!defaultHostId) {
       const { data: newHost, error: hostError } = await supabaseAdmin
         .from('hosts')
         .insert({
-          name: 'UptimeRobot',
+          name: 'UptimeRobot (Ungrouped)',
           location: 'Cloud Monitoring',
-          description: 'Servers monitored by UptimeRobot',
+          description: 'Monitors not assigned to any group',
         })
         .select()
         .single();
@@ -87,14 +120,21 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      hostId = newHost.id;
-      console.log(`[UptimeRobot] Created default host with ID: ${hostId}`);
+      defaultHostId = newHost.id;
+      console.log(`[UptimeRobot] Created default host with ID: ${defaultHostId}`);
     }
 
     // Process each monitor
     for (const monitor of monitors) {
       try {
-        const transformed = poller.transformMonitor(monitor);
+        const transformed = poller.transformMonitor(monitor, monitor.mwindows);
+
+        // Determine which host to use (first group, or default if no groups)
+        let hostId = defaultHostId;
+        if (monitor.mwindows && monitor.mwindows.length > 0) {
+          const firstMWindowId = monitor.mwindows[0];
+          hostId = mwindowToHostId.get(firstMWindowId) || defaultHostId;
+        }
 
         // Check if server exists
         const { data: existingServer } = await supabaseAdmin
@@ -111,6 +151,7 @@ export async function POST(request: NextRequest) {
             .from('servers')
             .update({
               name: transformed.name,
+              host_id: hostId,
               url: transformed.url,
               server_type: transformed.server_type,
               current_status: transformed.current_status,

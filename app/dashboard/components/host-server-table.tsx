@@ -79,7 +79,11 @@ function getStatusOrder(status: ServerStatus): number {
   }
 }
 
-export function HostServerTable({ host, allHosts }: { host: Host; allHosts: Host[] }) {
+export function HostServerTable({ host, allHosts, onDragStart }: { 
+  host: Host; 
+  allHosts: Host[];
+  onDragStart?: (serverId: string) => void;
+}) {
   const [sortField, setSortField] = useState<SortField>('current_status');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
@@ -208,8 +212,10 @@ export function HostServerTable({ host, allHosts }: { host: Host; allHosts: Host
           {sortedServers.map((server) => (
             <TableRow 
               key={server.id}
+              draggable
+              onDragStart={() => onDragStart?.(server.id)}
               onClick={() => handleRowClick(server)}
-              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="cursor-move hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               <TableCell>
                 <Badge variant={getStatusBadgeVariant(server.current_status)} style={{ minWidth: '100px' }}>

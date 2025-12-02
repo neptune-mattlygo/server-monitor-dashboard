@@ -11,6 +11,8 @@ import { AddServerDialog } from './add-server-dialog';
 import { AddHostDialog } from './add-host-dialog';
 import { EditHostDialog } from './edit-host-dialog';
 import { Server, Plus, Database, Pencil, LayoutGrid, List } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -43,12 +45,15 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ hosts, summary }: DashboardClientProps) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<ServerStatus | 'all'>('all');
   const [viewMode, setViewMode] = useState<'grouped' | 'all'>('grouped');
   const [addServerDialogOpen, setAddServerDialogOpen] = useState(false);
   const [addHostDialogOpen, setAddHostDialogOpen] = useState(false);
   const [editHostDialogOpen, setEditHostDialogOpen] = useState(false);
   const [selectedHost, setSelectedHost] = useState<Host | null>(null);
+  const [draggedServerId, setDraggedServerId] = useState<string | null>(null);
+  const [dragOverHostId, setDragOverHostId] = useState<string | null>(null);
 
   const handleFilterClick = (status: ServerStatus | 'all') => {
     setStatusFilter(statusFilter === status ? 'all' : status);
@@ -57,6 +62,46 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const handleEditHost = (host: Host) => {
     setSelectedHost(host);
     setEditHostDialogOpen(true);
+  };
+
+  const handleDragStart = (serverId: string) => {
+    setDraggedServerId(serverId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, hostId: string) => {
+    e.preventDefault();
+    setDragOverHostId(hostId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverHostId(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetHostId: string) => {
+    e.preventDefault();
+    setDragOverHostId(null);
+
+    if (!draggedServerId) return;
+
+    try {
+      const response = await fetch(`/api/servers/${draggedServerId}/host`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host_id: targetHostId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to move server');
+      }
+
+      toast.success('Server moved successfully');
+      router.refresh();
+    } catch (error) {
+      console.error('Error moving server:', error);
+      toast.error('Failed to move server');
+    } finally {
+      setDraggedServerId(null);
+    }
   };
 
   return (
@@ -215,8 +260,16 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
             // Skip hosts with no servers after filtering
             if (filteredHost.servers.length === 0) return null;
 
+            const isDragOver = dragOverHostId === host.id;
+
             return (
-              <Card key={host.id}>
+              <Card 
+                key={host.id}
+                className={`transition-all ${isDragOver ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950' : ''}`}
+                onDragOver={(e) => handleDragOver(e, host.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, host.id)}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
@@ -243,7 +296,11 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <HostServerTable host={filteredHost} allHosts={hosts} />
+                  <HostServerTable 
+                    host={filteredHost} 
+                    allHosts={hosts} 
+                    onDragStart={handleDragStart}
+                  />
                 </CardContent>
               </Card>
             );
