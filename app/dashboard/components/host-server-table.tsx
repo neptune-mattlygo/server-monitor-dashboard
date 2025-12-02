@@ -15,9 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { ServerEditDialog } from './server-edit-dialog';
+import { ServerEventHistoryDialog } from './server-event-history-dialog';
+import { RelativeTime } from './relative-time';
 import { useRouter } from 'next/navigation';
-import { Server as ServerIcon, MapPin, Globe } from 'lucide-react';
+import { Server as ServerIcon, MapPin, Globe, History } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 type SortField = 'current_status' | 'name' | 'server_type' | 'ip_address';
@@ -30,6 +33,17 @@ interface Server {
   server_type: string | null;
   ip_address: string | null;
   current_status: ServerStatus;
+  uptime_display?: string | null;
+  last_backup?: {
+    created_at: string;
+    message?: string;
+    status?: string;
+  } | null;
+  last_filemaker_event?: {
+    created_at: string;
+    message?: string;
+    status?: string;
+  } | null;
 }
 
 interface Host {
@@ -88,6 +102,9 @@ export function HostServerTable({ host, allHosts, onDragStart }: {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [eventHistoryServerId, setEventHistoryServerId] = useState<string | null>(null);
+  const [eventHistoryServerName, setEventHistoryServerName] = useState<string>('');
+  const [eventHistoryOpen, setEventHistoryOpen] = useState(false);
   const router = useRouter();
 
   const handleSort = (field: SortField) => {
@@ -206,6 +223,10 @@ export function HostServerTable({ host, allHosts, onDragStart }: {
             >
               IP Address <SortIcon field="ip_address" />
             </TableHead>
+            <TableHead>Uptime</TableHead>
+            <TableHead>Last Backup</TableHead>
+            <TableHead>Last FileMaker Event</TableHead>
+            <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -262,6 +283,42 @@ export function HostServerTable({ host, allHosts, onDragStart }: {
               <TableCell className="font-mono text-sm">
                 {server.ip_address || '-'}
               </TableCell>
+              <TableCell className="text-sm">
+                {server.current_status === 'up' ? (
+                  server.uptime_display || '-'
+                ) : (
+                  <span className="text-gray-400">N/A</span>
+                )}
+              </TableCell>
+              <TableCell className="text-sm text-gray-600">
+                {server.last_backup ? (
+                  <RelativeTime dateString={server.last_backup.created_at} />
+                ) : (
+                  '-'
+                )}
+              </TableCell>
+              <TableCell className="text-sm text-gray-600">
+                {server.last_filemaker_event ? (
+                  <RelativeTime dateString={server.last_filemaker_event.created_at} />
+                ) : (
+                  '-'
+                )}
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEventHistoryServerId(server.id);
+                    setEventHistoryServerName(server.name);
+                    setEventHistoryOpen(true);
+                  }}
+                  title="View event history"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -273,6 +330,13 @@ export function HostServerTable({ host, allHosts, onDragStart }: {
         onOpenChange={setDialogOpen}
         onSave={handleSave}
         hosts={allHosts}
+      />
+      
+      <ServerEventHistoryDialog
+        serverId={eventHistoryServerId}
+        serverName={eventHistoryServerName}
+        open={eventHistoryOpen}
+        onOpenChange={setEventHistoryOpen}
       />
     </>
   );

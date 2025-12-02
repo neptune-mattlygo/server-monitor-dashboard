@@ -67,14 +67,126 @@ async function getDashboardData() {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', yesterday.toISOString());
 
+    // Fetch last down event, last backup, and last FileMaker event for each server
+    const serverIds = allServers.map(s => s.id);
+    
+    // Get last down events for uptime calculation
+    const { data: lastDownEvents } = await supabaseAdmin
+      .from('server_events')
+      .select('server_id, created_at, new_status, status')
+      .in('server_id', serverIds)
+      .or('new_status.eq.down,status.eq.down')
+      .order('created_at', { ascending: false });
+
+    // Get last up events
+    const { data: lastUpEvents } = await supabaseAdmin
+      .from('server_events')
+      .select('server_id, created_at, new_status, status')
+      .in('server_id', serverIds)
+      .or('new_status.eq.up,status.eq.up')
+      .order('created_at', { ascending: false });
+
+    // Get last backup events
+    const { data: lastBackupEvents } = await supabaseAdmin
+      .from('server_events')
+      .select('server_id, created_at, message, status')
+      .in('server_id', serverIds)
+      .eq('event_type', 'backup')
+      .order('created_at', { ascending: false });
+
+    // Get last FileMaker events
+    const { data: lastFilemakerEvents } = await supabaseAdmin
+      .from('server_events')
+      .select('server_id, created_at, message, status')
+      .in('server_id', serverIds)
+      .eq('event_type', 'filemaker_event')
+      .order('created_at', { ascending: false });
+
+    // Build lookup maps
+    const downEventMap = new Map<string, any>();
+    const upEventMap = new Map<string, any>();
+    const backupEventMap = new Map<string, any>();
+    const filemakerEventMap = new Map<string, any>();
+
+    lastDownEvents?.forEach(evt => {
+      if (!downEventMap.has(evt.server_id)) {
+        downEventMap.set(evt.server_id, evt);
+      }
+    });
+
+    lastUpEvents?.forEach(evt => {
+      if (!upEventMap.has(evt.server_id)) {
+        upEventMap.set(evt.server_id, evt);
+      }
+    });
+
+    lastBackupEvents?.forEach(evt => {
+      if (!backupEventMap.has(evt.server_id)) {
+        backupEventMap.set(evt.server_id, evt);
+      }
+    });
+
+    lastFilemakerEvents?.forEach(evt => {
+      if (!filemakerEventMap.has(evt.server_id)) {
+        filemakerEventMap.set(evt.server_id, evt);
+      }
+    });
+
+    // Enrich servers with event data
+    const enrichedHosts = hosts?.map(host => ({
+      ...host,
+      servers: host.servers.map((server: any) => {
+        const lastDown = downEventMap.get(server.id);
+        const lastUp = upEventMap.get(server.id);
+        const lastBackup = backupEventMap.get(server.id);
+        const lastFilemaker = filemakerEventMap.get(server.id);
+
+        // Calculate uptime if server is up
+        let uptimeMs: number | null = null;
+        let uptimeDisplay: string | null = null;
+
+        if (server.current_status === 'up') {
+          if (lastUp && (!lastDown || new Date(lastUp.created_at) > new Date(lastDown.created_at))) {
+            uptimeMs = Date.now() - new Date(lastUp.created_at).getTime();
+            uptimeDisplay = formatUptime(uptimeMs);
+          }
+        }
+
+        return {
+          ...server,
+          uptime_ms: uptimeMs,
+          uptime_display: uptimeDisplay,
+          last_backup: lastBackup,
+          last_filemaker_event: lastFilemaker,
+        };
+      }),
+    }));
+
     return {
-      hosts,
+      hosts: enrichedHosts,
       summary,
       recentEventCount: recentEventCount || 0,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     return null;
+  }
+}
+
+function formatUptime(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return `${days}d ${hours % 24}h`;
+  } else if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m`;
+  } else {
+    return `${seconds}s`;
   }
 }
 
