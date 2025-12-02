@@ -84,7 +84,23 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="border-b bg-white dark:bg-gray-800">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <h1 className="text-2xl font-bold">Server Monitor Dashboard</h1>
+          <div className="flex items-center gap-6">
+            <h1 className="text-2xl font-bold">Server Monitor Dashboard</h1>
+            <nav className="flex gap-4">
+              <a 
+                href="/dashboard" 
+                className="text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-blue-600 pb-1"
+              >
+                Dashboard
+              </a>
+              <a 
+                href="/events" 
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                Events
+              </a>
+            </nav>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600 dark:text-gray-300">
               {user.display_name || user.email}
