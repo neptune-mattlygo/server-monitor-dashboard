@@ -202,7 +202,8 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
 
       {/* Grouped View - Servers by Host */}
       {viewMode === 'grouped' && hosts && hosts.length > 0 ? (
-        <div className="space-y-6">
+        <TooltipProvider>
+          <div className="space-y-6">
           {hosts.map((host) => {
             const filteredHost = {
               ...host,
@@ -247,7 +248,8 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
               </Card>
             );
           })}
-        </div>
+          </div>
+        </TooltipProvider>
       ) : viewMode === 'grouped' ? (
         <Card>
           <CardHeader>
