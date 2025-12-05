@@ -19,7 +19,12 @@ import {
   LayoutDashboard, 
   Activity,
   Server,
-  Database
+  Database,
+  Shield,
+  AlertCircle,
+  Users,
+  MapPin,
+  Palette
 } from 'lucide-react';
 
 interface DashboardHeaderProps {
@@ -28,9 +33,10 @@ interface DashboardHeaderProps {
     display_name?: string | null;
     role: string;
   };
+  isAdmin?: boolean;
 }
 
-export function DashboardHeader({ user }: DashboardHeaderProps) {
+export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps) {
   const initials = user.display_name
     ? user.display_name
         .split(' ')
@@ -66,6 +72,50 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                 Events
               </a>
             </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <a href="/status" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Status Page
+              </a>
+            </Button>
+            {isAdmin && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuLabel>Status Page Admin</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <a href="/dashboard/admin/incidents" className="cursor-pointer">
+                      <AlertCircle className="mr-2 h-4 w-4" />
+                      <span>Incidents</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href="/dashboard/admin/clients" className="cursor-pointer">
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Clients & Subscribers</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href="/dashboard/admin/regions" className="cursor-pointer">
+                      <MapPin className="mr-2 h-4 w-4" />
+                      <span>Regions</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href="/dashboard/admin/config" className="cursor-pointer">
+                      <Palette className="mr-2 h-4 w-4" />
+                      <span>Configuration</span>
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
         </div>
 

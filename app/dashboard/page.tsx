@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth/session';
+import { isAdmin } from '@/lib/auth/permissions';
 import { DashboardClient } from './components/dashboard-client';
 import { DashboardHeader } from './components/dashboard-header';
 import { DashboardSkeleton } from './components/dashboard-skeleton';
@@ -197,11 +198,12 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
+  const userIsAdmin = isAdmin(user);
   const dashboardData = await getDashboardData();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <DashboardHeader user={user} />
+      <DashboardHeader user={user} isAdmin={userIsAdmin} />
 
       <main className="container mx-auto px-4 py-8">
         <Suspense fallback={<DashboardSkeleton />}>

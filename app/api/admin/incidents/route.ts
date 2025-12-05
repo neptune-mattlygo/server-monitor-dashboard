@@ -1,0 +1,133 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+import { getCurrentUser } from '@/lib/auth/session';
+import { isAdmin } from '@/lib/auth/permissions';
+
+export const dynamic = 'force-dynamic';
+
+// GET /api/admin/incidents - List incidents with pagination
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !isAdmin(user)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    const status = searchParams.get('status');
+
+    let query = supabaseAdmin
+      .from('status_incidents')
+      .select(`
+        *,
+        incident_updates (
+          id,
+          message,
+          update_type,
+          created_at,
+          created_by
+        ),
+        profiles!status_incidents_created_by_fkey (
+          id,
+          email,
+          full_name
+        )
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    const { data: incidents, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching incidents:', error);
+      return NextResponse.json({ error: 'Failed to fetch incidents' }, { status: 500 });
+    }
+
+    return NextResponse.json({ incidents, total: count, limit, offset });
+  } catch (error) {
+    console.error('Error in GET /api/admin/incidents:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST /api/admin/incidents - Create new incident
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !isAdmin(user)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const {
+      title,
+      description,
+      incident_type,
+      severity,
+      affected_servers,
+      affected_regions,
+      status,
+      notify_subscribers,
+    } = body;
+
+    if (!title || !description || !incident_type || !severity) {
+      return NextResponse.json(
+        { error: 'Title, description, incident_type, and severity are required' },
+        { status: 400 }
+      );
+    }
+
+    const { data: incident, error } = await supabaseAdmin
+      .from('status_incidents')
+      .insert({
+        title,
+        description,
+        incident_type,
+        severity,
+        affected_servers: affected_servers || [],
+        affected_regions: affected_regions || [],
+        status: status || 'investigating',
+        notify_subscribers: notify_subscribers ?? false,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating incident:', error);
+      return NextResponse.json({ error: 'Failed to create incident' }, { status: 500 });
+    }
+
+    // Create initial incident update
+    await supabaseAdmin.from('incident_updates').insert({
+      incident_id: incident.id,
+      message: description,
+      update_type: 'investigating',
+      created_by: user.id,
+    });
+
+    // Trigger notifications if requested
+    if (notify_subscribers) {
+      try {
+        // Import dynamically to avoid circular dependencies
+        const { sendIncidentNotifications } = await import('@/lib/email/notify-incident');
+        await sendIncidentNotifications(incident.id);
+        console.log('Notifications triggered for incident:', incident.id);
+      } catch (notifyError) {
+        console.error('Failed to send notifications:', notifyError);
+        // Don't fail the request if notifications fail
+      }
+    }
+
+    return NextResponse.json({ incident }, { status: 201 });
+  } catch (error) {
+    console.error('Error in POST /api/admin/incidents:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

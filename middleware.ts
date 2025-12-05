@@ -13,6 +13,8 @@ export async function middleware(request: NextRequest) {
     '/api/auth/local/signup',
     '/auth/error',
     '/login',
+    '/status', // Public status page
+    '/api/status', // Public status API
   ];
 
   // Webhook routes (validated internally)
