@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -33,11 +33,13 @@ export async function PATCH(
       }
     }
 
+    const { id } = await params;
+
     // Update the server's host
     const { data: server, error: updateError } = await supabaseAdmin
       .from('servers')
       .update({ host_id })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -51,7 +53,7 @@ export async function PATCH(
       user_id: user.id,
       action: 'update',
       resource_type: 'server',
-      resource_id: params.id,
+      resource_id: id,
       details: { field: 'host_id', new_value: host_id },
     });
 

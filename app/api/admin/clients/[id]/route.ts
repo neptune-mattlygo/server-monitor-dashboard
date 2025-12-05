@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 // PATCH /api/admin/clients/[id] - Update client
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -30,10 +30,12 @@ export async function PATCH(
       }
     }
 
+    const { id } = await params;
+
     const { data: client, error } = await supabaseAdmin
       .from('clients')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -52,7 +54,7 @@ export async function PATCH(
 // DELETE /api/admin/clients/[id] - Delete client
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -60,10 +62,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    const { id } = await params;
+
     const { error } = await supabaseAdmin
       .from('clients')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting client:', error);

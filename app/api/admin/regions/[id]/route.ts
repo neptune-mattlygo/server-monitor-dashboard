@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 // PATCH /api/admin/regions/[id] - Update region
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -18,6 +18,8 @@ export async function PATCH(
 
     const body = await request.json();
     const { name, slug, description, display_order, is_active } = body;
+
+    const { id } = await params;
 
     const supabase = supabaseAdmin;
     const { data: region, error } = await supabase
@@ -29,7 +31,7 @@ export async function PATCH(
         ...(display_order !== undefined && { display_order }),
         ...(is_active !== undefined && { is_active }),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -51,7 +53,7 @@ export async function PATCH(
 // DELETE /api/admin/regions/[id] - Delete region
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -59,13 +61,15 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    const { id } = await params;
+
     const supabase = supabaseAdmin;
     
     // Check if region has servers
     const { count } = await supabase
       .from('servers')
       .select('*', { count: 'exact', head: true })
-      .eq('region_id', params.id);
+      .eq('region_id', id);
 
     if (count && count > 0) {
       return NextResponse.json(
@@ -77,7 +81,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('regions')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting region:', error);
