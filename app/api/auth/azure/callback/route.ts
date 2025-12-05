@@ -55,9 +55,9 @@ export async function GET(request: NextRequest) {
     );
 
     // Calculate token expiration
-    const expiresAt = new Date(
-      Date.now() + (tokenResponse.expiresIn || 3600) * 1000
-    );
+    const expiresAt = tokenResponse.expiresOn 
+      ? new Date(tokenResponse.expiresOn)
+      : new Date(Date.now() + 3600 * 1000);
 
     // Create session
     const session = await createSession(
