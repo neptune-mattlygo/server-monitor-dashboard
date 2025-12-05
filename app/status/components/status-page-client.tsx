@@ -129,13 +129,13 @@ export function StatusPageClient() {
   const getStatusColor = () => {
     switch (data.status) {
       case 'operational':
-        return 'bg-green-50 border-green-200';
+        return 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800';
       case 'degraded':
-        return 'bg-yellow-50 border-yellow-200';
+        return 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800';
       case 'outage':
-        return 'bg-red-50 border-red-200';
+        return 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800';
       case 'maintenance':
-        return 'bg-blue-50 border-blue-200';
+        return 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800';
     }
   };
 
