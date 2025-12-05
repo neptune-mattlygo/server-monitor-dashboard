@@ -29,7 +29,7 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
     location: '',
-    provider: '',
+    description: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +57,7 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
       setFormData({
         name: '',
         location: '',
-        provider: '',
+        description: '',
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -106,12 +106,12 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="provider">Provider</Label>
+              <Label htmlFor="description">Description</Label>
               <Input
-                id="provider"
-                value={formData.provider}
-                onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                placeholder="e.g., AWS, Azure, On-Premises"
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="e.g., Primary production environment"
               />
             </div>
           </div>

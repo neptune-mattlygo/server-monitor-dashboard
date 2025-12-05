@@ -29,7 +29,7 @@ interface Host {
   id: string;
   name: string;
   location: string | null;
-  provider: string | null;
+  description: string | null;
   servers: Server[];
 }
 
@@ -256,9 +256,6 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                 ? host.servers 
                 : host.servers.filter(s => s.current_status === statusFilter)
             };
-
-            // Skip hosts with no servers after filtering
-            if (filteredHost.servers.length === 0) return null;
 
             const isDragOver = dragOverHostId === host.id;
 
