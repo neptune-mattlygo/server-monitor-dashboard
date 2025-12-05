@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { 
   User, 
   LogOut, 
@@ -120,6 +121,8 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
+          
           <Badge variant="outline" className="capitalize">
             <Database className="h-3 w-3 mr-1" />
             {user.role}
