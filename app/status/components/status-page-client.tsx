@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { CheckCircle2, AlertCircle, AlertTriangle, Clock, Mail } from 'lucide-react';
 
 interface StatusData {
@@ -90,10 +91,10 @@ export function StatusPageClient() {
 
   if (loading || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading status...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading status...</p>
         </div>
       </div>
     );
@@ -149,22 +150,25 @@ export function StatusPageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="container mx-auto px-4 py-6 max-w-5xl">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{data.config.company_name}</h1>
-              <p className="text-gray-600 mt-1">System Status</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{data.config.company_name}</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">System Status</p>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowSubscribe(!showSubscribe)}
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Subscribe to Updates
-            </Button>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <Button
+                variant="outline"
+                onClick={() => setShowSubscribe(!showSubscribe)}
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Subscribe to Updates
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -220,9 +224,9 @@ export function StatusPageClient() {
             <div className="flex items-center gap-4">
               {getStatusIcon()}
               <div className="flex-1">
-                <h2 className="text-2xl font-semibold text-gray-900">{getStatusText()}</h2>
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{getStatusText()}</h2>
                 {data.config.show_uptime_percentage && data.uptime_percentage && (
-                  <p className="text-gray-600 mt-1">
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
                     {data.uptime_percentage}% uptime (last 90 days)
                   </p>
                 )}
@@ -240,24 +244,24 @@ export function StatusPageClient() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900">{data.servers.total}</div>
-                <div className="text-sm text-gray-600">Total Services</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{data.servers.total}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Services</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{data.servers.up}</div>
-                <div className="text-sm text-gray-600">Operational</div>
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">{data.servers.up}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Operational</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-red-600">{data.servers.down}</div>
-                <div className="text-sm text-gray-600">Down</div>
+                <div className="text-3xl font-bold text-red-600 dark:text-red-400">{data.servers.down}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Down</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-600">{data.servers.degraded}</div>
-                <div className="text-sm text-gray-600">Degraded</div>
+                <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{data.servers.degraded}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Degraded</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{data.servers.maintenance}</div>
-                <div className="text-sm text-gray-600">Maintenance</div>
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{data.servers.maintenance}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Maintenance</div>
               </div>
             </div>
           </CardContent>
@@ -266,7 +270,7 @@ export function StatusPageClient() {
         {/* Active Incidents */}
         {data.active_incidents.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Active Incidents</h2>
+            <h2 className="text-xl font-semibold mb-4 dark:text-gray-100">Active Incidents</h2>
             <div className="space-y-4">
               {data.active_incidents.map((incident) => {
                 const statusInfo = getIncidentStatusBadge(incident.status);
@@ -305,9 +309,9 @@ export function StatusPageClient() {
                         <h4 className="font-semibold text-sm mb-2">Updates:</h4>
                         <div className="space-y-2">
                           {incident.incident_updates.slice(0, 3).map((update: any) => (
-                            <div key={update.id} className="text-sm border-l-2 border-gray-200 pl-3">
-                              <p className="text-gray-700">{update.message}</p>
-                              <p className="text-gray-500 text-xs mt-1">
+                            <div key={update.id} className="text-sm border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                              <p className="text-gray-700 dark:text-gray-300">{update.message}</p>
+                              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
                                 {new Date(update.created_at).toLocaleString()}
                               </p>
                             </div>
@@ -325,7 +329,7 @@ export function StatusPageClient() {
         {/* Resolved Incidents (Last 7 Days) */}
         {data.resolved_incidents.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Recent Resolutions</h2>
+            <h2 className="text-xl font-semibold mb-4 dark:text-gray-100">Recent Resolutions</h2>
             <div className="space-y-4">
               {data.resolved_incidents.map((incident) => (
                 <Card key={incident.id} className="opacity-75">
@@ -342,7 +346,7 @@ export function StatusPageClient() {
                           >
                             {incident.severity}
                           </Badge>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             Resolved {new Date(incident.resolved_at).toLocaleDateString()}
                           </span>
                         </div>
@@ -356,12 +360,12 @@ export function StatusPageClient() {
         )}
 
         {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-600">
+        <div className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>Last updated: {new Date(data.last_updated).toLocaleString()}</p>
           {data.config.support_email && (
             <p className="mt-2">
               Questions? Contact{' '}
-              <a href={`mailto:${data.config.support_email}`} className="text-blue-600 hover:underline">
+              <a href={`mailto:${data.config.support_email}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                 {data.config.support_email}
               </a>
             </p>
