@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -25,6 +25,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
+    const { id } = await params;
+
     const { data, error } = await supabaseAdmin
       .from('hosts')
       .update({
@@ -33,7 +35,7 @@ export async function PATCH(
         provider: provider || null,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -54,7 +56,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -68,10 +70,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const { id } = await params;
+
     const { error } = await supabaseAdmin
       .from('hosts')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting host:', error);
