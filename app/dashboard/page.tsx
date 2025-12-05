@@ -29,7 +29,7 @@ interface Host {
   id: string;
   name: string;
   location: string | null;
-  provider: string | null;
+  description: string | null;
   servers: Server[];
 }
 

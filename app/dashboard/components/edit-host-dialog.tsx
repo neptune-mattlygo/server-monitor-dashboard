@@ -20,7 +20,7 @@ interface Host {
   id: string;
   name: string;
   location: string | null;
-  provider: string | null;
+  description: string | null;
 }
 
 interface EditHostDialogProps {
@@ -37,7 +37,7 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
   const [formData, setFormData] = useState({
     name: '',
     location: '',
-    provider: '',
+    description: '',
   });
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
       setFormData({
         name: host.name,
         location: host.location || '',
-        provider: host.provider || '',
+        description: host.description || '',
       });
     }
   }, [host]);
@@ -151,12 +151,12 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="edit-provider">Provider</Label>
+              <Label htmlFor="edit-description">Description</Label>
               <Input
-                id="edit-provider"
-                value={formData.provider}
-                onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                placeholder="e.g., AWS, Azure, GCP"
+                id="edit-description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="e.g., Primary production environment"
               />
             </div>
           </div>
