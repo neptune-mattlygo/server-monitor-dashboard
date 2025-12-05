@@ -1,32 +1,45 @@
 import { ConfidentialClientApplication, Configuration } from '@azure/msal-node';
 import jwt from 'jsonwebtoken';
 
-// Azure AD configuration
-const msalConfig: Configuration = {
-  auth: {
-    clientId: process.env.AZURE_AD_CLIENT_ID!,
-    authority: `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID}`,
-    clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-  },
-  system: {
-    loggerOptions: {
-      loggerCallback(loglevel, message, containsPii) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(message);
-        }
-      },
-      piiLoggingEnabled: false,
-      logLevel: 3, // Error
-    },
-  },
-};
+// Lazy-initialized MSAL client (only created when Azure credentials are available)
+let msalClient: ConfidentialClientApplication | null = null;
 
-// Create MSAL client
-export const msalClient = new ConfidentialClientApplication(msalConfig);
+const getMsalClient = () => {
+  if (!msalClient) {
+    // Only initialize if Azure credentials are provided
+    if (!process.env.AZURE_AD_CLIENT_ID || !process.env.AZURE_AD_CLIENT_SECRET || !process.env.AZURE_AD_TENANT_ID) {
+      throw new Error('Azure AD credentials not configured');
+    }
+
+    const msalConfig: Configuration = {
+      auth: {
+        clientId: process.env.AZURE_AD_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID}`,
+        clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
+      },
+      system: {
+        loggerOptions: {
+          loggerCallback(loglevel, message, containsPii) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(message);
+            }
+          },
+          piiLoggingEnabled: false,
+          logLevel: 3, // Error
+        },
+      },
+    };
+
+    msalClient = new ConfidentialClientApplication(msalConfig);
+  }
+  
+  return msalClient;
+};
 
 // Azure AD OAuth URLs
 export const getAuthUrl = () => {
-  return msalClient.getAuthCodeUrl({
+  const client = getMsalClient();
+  return client.getAuthCodeUrl({
     scopes: ['User.Read', 'email', 'profile', 'openid'],
     redirectUri: process.env.AZURE_AD_REDIRECT_URI!,
   });
@@ -34,7 +47,8 @@ export const getAuthUrl = () => {
 
 // Exchange authorization code for tokens
 export const acquireTokenByCode = async (code: string) => {
-  return await msalClient.acquireTokenByCode({
+  const client = getMsalClient();
+  return await client.acquireTokenByCode({
     code,
     scopes: ['User.Read', 'email', 'profile', 'openid'],
     redirectUri: process.env.AZURE_AD_REDIRECT_URI!,
@@ -43,7 +57,8 @@ export const acquireTokenByCode = async (code: string) => {
 
 // Refresh access token
 export const acquireTokenByRefreshToken = async (refreshToken: string) => {
-  return await msalClient.acquireTokenByRefreshToken({
+  const client = getMsalClient();
+  return await client.acquireTokenByRefreshToken({
     refreshToken,
     scopes: ['User.Read', 'email', 'profile', 'openid'],
   });
