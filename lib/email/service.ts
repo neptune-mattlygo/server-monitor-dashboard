@@ -1,6 +1,18 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy-load Resend client to avoid build-time errors
+let resend: Resend | null = null;
+
+const getResendClient = () => {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set');
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+};
 
 const FROM_EMAIL = process.env.STATUS_PAGE_FROM_EMAIL || 'status@example.com';
 const FROM_NAME = process.env.STATUS_PAGE_FROM_NAME || 'Server Monitor Status';
@@ -55,7 +67,8 @@ export async function sendIncidentNotification(
       resolved: '✅ Resolved'
     }[data.status] || data.status;
 
-    await resend.emails.send({
+    const client = getResendClient();
+    await client.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject: `${severityEmoji} ${data.incidentTitle}`,
@@ -145,7 +158,8 @@ export async function sendVerificationEmail(
   data: VerificationEmailData
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await resend.emails.send({
+    const client = getResendClient();
+    await client.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject: `Verify your subscription to ${data.companyName} status updates`,
@@ -221,7 +235,8 @@ export async function sendSubscriptionConfirmation(
   unsubscribeUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await resend.emails.send({
+    const client = getResendClient();
+    await client.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject: `You're subscribed to ${companyName} status updates`,
