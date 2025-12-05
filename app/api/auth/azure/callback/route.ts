@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     const session = await createSession(
       profile.id,
       tokenResponse.accessToken,
-      tokenResponse.refreshToken || '',
+      '', // Azure MSAL doesn't provide refresh tokens in this flow
       expiresAt
     );
 
