@@ -59,7 +59,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating host:', error);
-      return NextResponse.json({ error: 'Failed to create host' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to create host',
+        details: error.message,
+        code: error.code 
+      }, { status: 500 });
     }
 
     return NextResponse.json(host, { status: 201 });
