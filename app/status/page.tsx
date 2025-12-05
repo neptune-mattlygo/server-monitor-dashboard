@@ -14,7 +14,7 @@ export default async function StatusPage() {
 
 function StatusPageSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <Skeleton className="h-12 w-64 mb-4" />
         <Skeleton className="h-6 w-48 mb-8" />
