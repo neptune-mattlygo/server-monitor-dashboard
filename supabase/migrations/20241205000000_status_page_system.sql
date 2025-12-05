@@ -3,7 +3,7 @@
 
 -- Regions/Locations for server grouping
 CREATE TABLE IF NOT EXISTS regions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT UNIQUE NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   description TEXT,
@@ -24,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_servers_region_id ON servers(region_id);
 
 -- Clients/Organizations who subscribe to status updates
 CREATE TABLE IF NOT EXISTS clients (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   company TEXT,
@@ -46,7 +46,7 @@ CREATE INDEX idx_clients_is_verified ON clients(is_verified) WHERE is_verified =
 
 -- Client subscription preferences
 CREATE TABLE IF NOT EXISTS client_subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
   subscription_type TEXT NOT NULL CHECK (subscription_type IN ('all_servers', 'specific_servers', 'region', 'host')),
   server_id UUID REFERENCES servers(id) ON DELETE CASCADE,
@@ -69,7 +69,7 @@ CREATE INDEX idx_client_subscriptions_host_id ON client_subscriptions(host_id);
 
 -- Status incidents (manually created by admins)
 CREATE TABLE IF NOT EXISTS status_incidents (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   incident_type TEXT NOT NULL CHECK (incident_type IN ('outage', 'degraded', 'maintenance', 'resolved')),
@@ -92,7 +92,7 @@ CREATE INDEX idx_status_incidents_severity ON status_incidents(severity);
 
 -- Incident updates (timeline of incident resolution)
 CREATE TABLE IF NOT EXISTS incident_updates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   incident_id UUID NOT NULL REFERENCES status_incidents(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
   update_type TEXT NOT NULL CHECK (update_type IN ('investigating', 'update', 'resolved')),
@@ -104,7 +104,7 @@ CREATE INDEX idx_incident_updates_incident_id ON incident_updates(incident_id, c
 
 -- Email notification log
 CREATE TABLE IF NOT EXISTS email_notifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   client_id UUID REFERENCES clients(id) ON DELETE SET NULL,
   incident_id UUID REFERENCES status_incidents(id) ON DELETE SET NULL,
   server_id UUID REFERENCES servers(id) ON DELETE SET NULL,
@@ -122,7 +122,7 @@ CREATE INDEX idx_email_notifications_delivery_status ON email_notifications(deli
 
 -- Status page branding configuration
 CREATE TABLE IF NOT EXISTS status_page_config (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_name TEXT NOT NULL DEFAULT 'Server Monitor',
   logo_url TEXT,
   primary_color TEXT DEFAULT '#3b82f6',

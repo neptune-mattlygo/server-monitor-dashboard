@@ -1,9 +1,6 @@
 -- Server Monitoring Dashboard Migration
 -- Creates all necessary tables, RLS policies, functions, and seed data
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- =============================================
 -- TABLES
 -- =============================================
@@ -28,7 +25,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
 
 -- Azure sessions table
 CREATE TABLE IF NOT EXISTS azure_sessions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   access_token_hash TEXT NOT NULL,
   refresh_token_hash TEXT,
@@ -41,7 +38,7 @@ CREATE INDEX IF NOT EXISTS idx_azure_sessions_expires_at ON azure_sessions(expir
 
 -- Hosts table
 CREATE TABLE IF NOT EXISTS hosts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT UNIQUE NOT NULL,
   location TEXT,
   description TEXT,
@@ -51,7 +48,7 @@ CREATE TABLE IF NOT EXISTS hosts (
 
 -- Servers table
 CREATE TABLE IF NOT EXISTS servers (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   host_id UUID REFERENCES hosts(id) ON DELETE SET NULL,
   server_type TEXT,
@@ -68,7 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_servers_status ON servers(current_status);
 
 -- Server events table
 CREATE TABLE IF NOT EXISTS server_events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   server_id UUID NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
   event_type TEXT NOT NULL CHECK (event_type IN ('status_change', 'backup', 's3_restore', 'filemaker_event')),
   event_source TEXT NOT NULL CHECK (event_source IN ('uptimerobot', 'filemaker', 'backup_system', 'aws_s3', 'manual')),
@@ -85,7 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_server_events_created_at ON server_events(created
 
 -- Webhook secrets table
 CREATE TABLE IF NOT EXISTS webhook_secrets (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   source TEXT UNIQUE NOT NULL CHECK (source IN ('uptimerobot', 'filemaker', 'backup_system', 'aws_s3')),
   secret_key TEXT NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
@@ -94,7 +91,7 @@ CREATE TABLE IF NOT EXISTS webhook_secrets (
 
 -- Audit logs table
 CREATE TABLE IF NOT EXISTS audit_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   action TEXT NOT NULL CHECK (action IN ('create', 'update', 'delete', 'login', 'logout', 'sync')),
   resource_type TEXT CHECK (resource_type IN ('server', 'host', 'user', 'webhook', 'session')),
