@@ -10,7 +10,7 @@ import { AllServersTable } from './all-servers-table';
 import { AddServerDialog } from './add-server-dialog';
 import { AddHostDialog } from './add-host-dialog';
 import { EditHostDialog } from './edit-host-dialog';
-import { Server, Plus, Database, Pencil, LayoutGrid, List } from 'lucide-react';
+import { Server, Plus, Database, Pencil, LayoutGrid, List, ChevronDown, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -54,6 +54,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const [selectedHost, setSelectedHost] = useState<Host | null>(null);
   const [draggedServerId, setDraggedServerId] = useState<string | null>(null);
   const [dragOverHostId, setDragOverHostId] = useState<string | null>(null);
+  const [collapsedHosts, setCollapsedHosts] = useState<Set<string>>(new Set());
 
   const handleFilterClick = (status: ServerStatus | 'all') => {
     setStatusFilter(statusFilter === status ? 'all' : status);
@@ -102,6 +103,18 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
     } finally {
       setDraggedServerId(null);
     }
+  };
+
+  const toggleHostCollapse = (hostId: string) => {
+    setCollapsedHosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(hostId)) {
+        newSet.delete(hostId);
+      } else {
+        newSet.add(hostId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -258,6 +271,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
             };
 
             const isDragOver = dragOverHostId === host.id;
+            const isCollapsed = collapsedHosts.has(host.id);
 
             return (
               <Card 
@@ -269,11 +283,25 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle>{host.name}</CardTitle>
-                      {host.location && (
-                        <CardDescription>{host.location}</CardDescription>
-                      )}
+                    <div className="flex items-center gap-2 flex-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleHostCollapse(host.id)}
+                        className="h-8 w-8 shrink-0"
+                      >
+                        {isCollapsed ? (
+                          <ChevronRight className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <div>
+                        <CardTitle>{host.name}</CardTitle>
+                        {host.location && (
+                          <CardDescription>{host.location}</CardDescription>
+                        )}
+                      </div>
                     </div>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -292,13 +320,15 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                     </Tooltip>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <HostServerTable 
-                    host={filteredHost} 
-                    allHosts={hosts} 
-                    onDragStart={handleDragStart}
-                  />
-                </CardContent>
+                {!isCollapsed && (
+                  <CardContent>
+                    <HostServerTable 
+                      host={filteredHost} 
+                      allHosts={hosts} 
+                      onDragStart={handleDragStart}
+                    />
+                  </CardContent>
+                )}
               </Card>
             );
           })}
