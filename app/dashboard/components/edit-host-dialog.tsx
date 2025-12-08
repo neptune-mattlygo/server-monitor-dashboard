@@ -26,7 +26,6 @@ import { AlertCircle } from 'lucide-react';
 interface Host {
   id: string;
   name: string;
-  location: string | null;
   description: string | null;
   region_id: string | null;
 }
@@ -50,7 +49,6 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
   
   const [formData, setFormData] = useState({
     name: '',
-    location: '',
     description: '',
     region_id: '',
   });
@@ -61,8 +59,9 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
       fetch('/api/admin/regions')
         .then(res => res.json())
         .then(data => {
-          if (Array.isArray(data)) {
-            setRegions(data);
+          // API returns { regions: [...] }
+          if (data.regions && Array.isArray(data.regions)) {
+            setRegions(data.regions);
           }
         })
         .catch(err => console.error('Failed to fetch regions:', err));
@@ -73,7 +72,6 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
     if (host) {
       setFormData({
         name: host.name,
-        location: host.location || '',
         description: host.description || '',
         region_id: host.region_id || '',
       });
@@ -167,16 +165,6 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., US East"
                 required
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-location">Location</Label>
-              <Input
-                id="edit-location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g., Virginia, USA"
               />
             </div>
 

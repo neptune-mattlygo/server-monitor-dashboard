@@ -51,16 +51,21 @@ export default async function IncidentsPage({
     })
   );
 
-  // Fetch servers and regions for the form
+  // Fetch servers, regions, and hosts for the form
   const { data: servers } = await supabaseAdmin
     .from('servers')
-    .select('id, name')
+    .select('id, name, region_id, host_id')
     .order('name');
 
   const { data: regions } = await supabaseAdmin
     .from('regions')
     .select('id, name')
     .eq('is_active', true)
+    .order('name');
+
+  const { data: hosts } = await supabaseAdmin
+    .from('hosts')
+    .select('id, name, region_id')
     .order('name');
 
   return (
@@ -77,6 +82,7 @@ export default async function IncidentsPage({
         offset={offset}
         servers={servers || []}
         regions={regions || []}
+        hosts={hosts || []}
       />
       </div>
     </div>

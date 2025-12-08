@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       severity,
       affected_servers,
       affected_regions,
+      affected_hosts,
       status,
       notify_subscribers,
     } = body;
@@ -97,8 +98,23 @@ export async function POST(request: NextRequest) {
         console.error('Error fetching servers by region:', regionError);
       } else if (regionServers) {
         const regionServerIds = regionServers.map(s => s.id);
-        // Combine with manually selected servers and remove duplicates
         allAffectedServers = [...new Set([...allAffectedServers, ...regionServerIds])];
+      }
+    }
+
+    // If hosts are selected, fetch all servers in those hosts
+    if (affected_hosts && affected_hosts.length > 0) {
+      const { data: hostServers, error: hostError } = await supabaseAdmin
+        .from('servers')
+        .select('id')
+        .in('host_id', affected_hosts);
+
+      if (hostError) {
+        console.error('Error fetching servers by host:', hostError);
+      } else if (hostServers) {
+        const hostServerIds = hostServers.map(s => s.id);
+        // Combine with existing servers and remove duplicates
+        allAffectedServers = [...new Set([...allAffectedServers, ...hostServerIds])];
       }
     }
 
@@ -111,6 +127,7 @@ export async function POST(request: NextRequest) {
         severity,
         affected_servers: allAffectedServers,
         affected_regions: affected_regions || [],
+        affected_hosts: affected_hosts || [],
         status: status || 'investigating',
         notify_subscribers: notify_subscribers ?? false,
         created_by: user.id,
@@ -130,6 +147,30 @@ export async function POST(request: NextRequest) {
       update_type: 'investigating',
       created_by: user.id,
     });
+
+    // Log event for each affected server
+    if (allAffectedServers.length > 0) {
+      const createdAt = new Date().toISOString();
+      const serverEvents = allAffectedServers.map(serverId => ({
+        server_id: serverId,
+        event_type: 'status_change',
+        event_source: 'manual',
+        status: 'incident',
+        message: `Incident created: ${title}`,
+        payload: {
+          incident_id: incident.id,
+          incident_url: `/dashboard/admin/incidents`,
+          incident_type,
+          severity,
+          description,
+          created_by: user.id,
+          created_by_email: user.email,
+          created_at: createdAt,
+        },
+      }));
+
+      await supabaseAdmin.from('server_events').insert(serverEvents);
+    }
 
     // Trigger notifications if requested
     if (notify_subscribers) {
