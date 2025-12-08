@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -28,8 +28,12 @@ interface Server {
 interface Host {
   id: string;
   name: string;
-  location: string | null;
   description: string | null;
+  region_id: string | null;
+  regions?: {
+    id: string;
+    name: string;
+  } | null;
   servers: Server[];
 }
 
@@ -53,8 +57,28 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const [editHostDialogOpen, setEditHostDialogOpen] = useState(false);
   const [selectedHost, setSelectedHost] = useState<Host | null>(null);
   const [draggedServerId, setDraggedServerId] = useState<string | null>(null);
+  const [selectedServerIds, setSelectedServerIds] = useState<Set<string>>(new Set());
   const [dragOverHostId, setDragOverHostId] = useState<string | null>(null);
   const [collapsedHosts, setCollapsedHosts] = useState<Set<string>>(new Set());
+  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup auto-scroll interval on unmount
+  useEffect(() => {
+    return () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+    };
+  }, []);
+
+  // Clear auto-scroll when drag ends
+  useEffect(() => {
+    if (!draggedServerId && autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
+  }, [draggedServerId]);
 
   const handleFilterClick = (status: ServerStatus | 'all') => {
     setStatusFilter(statusFilter === status ? 'all' : status);
@@ -65,44 +89,141 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
     setEditHostDialogOpen(true);
   };
 
+  const handleServerSelect = (serverId: string, isCtrlOrCmd: boolean) => {
+    setSelectedServerIds(prev => {
+      const newSet = new Set(prev);
+      if (isCtrlOrCmd) {
+        // Toggle selection with Ctrl/Cmd
+        if (newSet.has(serverId)) {
+          newSet.delete(serverId);
+        } else {
+          newSet.add(serverId);
+        }
+      } else {
+        // Single selection without Ctrl/Cmd
+        if (newSet.has(serverId) && newSet.size === 1) {
+          newSet.clear();
+        } else {
+          newSet.clear();
+          newSet.add(serverId);
+        }
+      }
+      return newSet;
+    });
+  };
+
   const handleDragStart = (serverId: string) => {
-    setDraggedServerId(serverId);
+    // If dragging a selected server, drag all selected servers
+    if (selectedServerIds.has(serverId)) {
+      setDraggedServerId('multiple');
+    } else {
+      setDraggedServerId(serverId);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedServerId(null);
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
   };
 
   const handleDragOver = (e: React.DragEvent, hostId: string) => {
     e.preventDefault();
     setDragOverHostId(hostId);
+
+    // Only auto-scroll if we're actually dragging something
+    if (!draggedServerId) {
+      // Make sure no scroll interval is running if we're not dragging
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Auto-scroll when dragging near the edges
+    const scrollThreshold = 100; // pixels from edge
+    const scrollSpeed = 10; // pixels per interval
+    const mouseY = e.clientY;
+    const windowHeight = window.innerHeight;
+
+    const shouldScrollUp = mouseY < scrollThreshold;
+    const shouldScrollDown = mouseY > windowHeight - scrollThreshold;
+
+    // If we're in a scroll zone and don't have an interval, create one
+    if ((shouldScrollUp || shouldScrollDown) && !autoScrollIntervalRef.current) {
+      const direction = shouldScrollUp ? -1 : 1;
+      autoScrollIntervalRef.current = setInterval(() => {
+        window.scrollBy(0, scrollSpeed * direction);
+      }, 16); // ~60fps
+    }
+    // If we're not in a scroll zone, clear any existing interval
+    else if (!shouldScrollUp && !shouldScrollDown && autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
   };
 
   const handleDragLeave = () => {
     setDragOverHostId(null);
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
   };
 
   const handleDrop = async (e: React.DragEvent, targetHostId: string) => {
     e.preventDefault();
     setDragOverHostId(null);
+    
+    // Immediately stop auto-scrolling
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
 
-    if (!draggedServerId) return;
+    const currentDraggedServerId = draggedServerId;
+    
+    // Clear drag state immediately to restore normal scrolling
+    setDraggedServerId(null);
+
+    if (!currentDraggedServerId) return;
 
     try {
-      const response = await fetch(`/api/servers/${draggedServerId}/host`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host_id: targetHostId }),
-      });
+      // Determine which servers to move
+      const serverIdsToMove = currentDraggedServerId === 'multiple' 
+        ? Array.from(selectedServerIds)
+        : [currentDraggedServerId];
 
-      if (!response.ok) {
-        throw new Error('Failed to move server');
+      // Move all servers
+      const movePromises = serverIdsToMove.map(serverId =>
+        fetch(`/api/servers/${serverId}/host`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ host_id: targetHostId }),
+        })
+      );
+
+      const responses = await Promise.all(movePromises);
+      const failedCount = responses.filter(r => !r.ok).length;
+
+      if (failedCount > 0) {
+        throw new Error(`Failed to move ${failedCount} server(s)`);
       }
 
-      toast.success('Server moved successfully');
+      const count = serverIdsToMove.length;
+      toast.success(`${count} server${count > 1 ? 's' : ''} moved successfully`);
+      
+      // Clear selection after successful move
+      setSelectedServerIds(new Set());
       router.refresh();
     } catch (error) {
       console.error('Error moving server:', error);
-      toast.error('Failed to move server');
-    } finally {
-      setDraggedServerId(null);
+      toast.error(error instanceof Error ? error.message : 'Failed to move server(s)');
     }
+    // Don't set draggedServerId to null here - it's already cleared above
   };
 
   const toggleHostCollapse = (hostId: string) => {
@@ -228,6 +349,25 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
             </Tooltip>
           </div>
           
+          {selectedServerIds.size > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                {selectedServerIds.size} server{selectedServerIds.size > 1 ? 's' : ''} selected
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedServerIds(new Set())}
+                className="h-6 px-2 text-xs"
+              >
+                Clear
+              </Button>
+              <span className="text-xs text-blue-600 dark:text-blue-400">
+                Drag to move
+              </span>
+            </div>
+          )}
+          
           <div className="flex gap-3">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -257,6 +397,16 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
       </TooltipProvider>
 
       <Separator className="my-6" />
+      
+      {/* Multi-select hint */}
+      {viewMode === 'grouped' && (
+        <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Tip: Hold Ctrl (⌘ on Mac) + click to select multiple servers for batch operations</span>
+        </div>
+      )}
 
       {/* Grouped View - Servers by Host */}
       {viewMode === 'grouped' && hosts && hosts.length > 0 ? (
@@ -298,8 +448,8 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                       </Button>
                       <div>
                         <CardTitle>{host.name}</CardTitle>
-                        {host.location && (
-                          <CardDescription>{host.location}</CardDescription>
+                        {host.regions?.name && (
+                          <CardDescription>{host.regions.name}</CardDescription>
                         )}
                       </div>
                     </div>
@@ -326,6 +476,9 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                       host={filteredHost} 
                       allHosts={hosts} 
                       onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      selectedServerIds={selectedServerIds}
+                      onServerSelect={handleServerSelect}
                     />
                   </CardContent>
                 )}
@@ -381,7 +534,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
               servers={hosts.flatMap(h => h.servers.map(s => ({
                 ...s,
                 host_name: h.name,
-                host_location: h.location
+                host_region: h.regions?.name || null
               })))}
               statusFilter={statusFilter}
               hosts={hosts}

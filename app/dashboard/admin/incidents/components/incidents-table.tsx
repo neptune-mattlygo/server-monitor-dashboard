@@ -42,10 +42,11 @@ interface Props {
   incidents: Incident[];
   servers: { id: string; name: string }[];
   regions: { id: string; name: string }[];
+  hosts: { id: string; name: string }[];
   onIncidentUpdated: () => void;
 }
 
-export function IncidentsTable({ incidents, servers, regions, onIncidentUpdated }: Props) {
+export function IncidentsTable({ incidents, servers, regions, hosts, onIncidentUpdated }: Props) {
   const [editIncident, setEditIncident] = useState<any>(null);
   const [addUpdateIncident, setAddUpdateIncident] = useState<any>(null);
   const [deleteIncident, setDeleteIncident] = useState<any>(null);
@@ -238,6 +239,7 @@ export function IncidentsTable({ incidents, servers, regions, onIncidentUpdated 
         }}
         servers={servers}
         regions={regions}
+        hosts={hosts}
         incident={editIncident}
       />
 

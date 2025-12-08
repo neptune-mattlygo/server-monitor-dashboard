@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { usePathname } from 'next/navigation';
 import { 
   User, 
   LogOut, 
@@ -38,6 +39,8 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps) {
+  const pathname = usePathname();
+  
   const initials = user.display_name
     ? user.display_name
         .split(' ')
@@ -45,6 +48,9 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
         .join('')
         .toUpperCase()
     : user.email[0].toUpperCase();
+
+  const isDashboard = pathname === '/dashboard';
+  const isEvents = pathname === '/events';
 
   return (
     <header className="border-b bg-white dark:bg-gray-800 sticky top-0 z-50">
@@ -60,14 +66,19 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
               variant="ghost"
               size="sm"
               asChild
-              className="text-blue-600 bg-blue-50 dark:bg-blue-950"
+              className={isDashboard ? "text-blue-600 bg-blue-50 dark:bg-blue-950" : ""}
             >
               <a href="/dashboard" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4" />
                 Dashboard
               </a>
             </Button>
-            <Button variant="ghost" size="sm" asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              asChild
+              className={isEvents ? "text-blue-600 bg-blue-50 dark:bg-blue-950" : ""}
+            >
               <a href="/events" className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
                 Events

@@ -51,6 +51,13 @@ export async function PATCH(
     const body = await request.json();
     const { name, host_id, server_type, ip_address, current_status, metadata } = body;
 
+    // Get the current server state for comparison
+    const { data: currentServer } = await supabaseAdmin
+      .from('servers')
+      .select('current_status, name')
+      .eq('id', id)
+      .single();
+
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (host_id !== undefined) updateData.host_id = host_id;
@@ -71,6 +78,24 @@ export async function PATCH(
 
     if (error) {
       throw error;
+    }
+
+    // Log event if status was manually changed
+    if (current_status !== undefined && currentServer && current_status !== currentServer.current_status) {
+      await supabaseAdmin.from('server_events').insert({
+        server_id: id,
+        event_type: 'status_change',
+        event_source: 'manual',
+        old_status: currentServer.current_status,
+        new_status: current_status,
+        status: current_status,
+        message: `Status manually changed from ${currentServer.current_status} to ${current_status}`,
+        payload: {
+          changed_by: user.id,
+          changed_by_email: user.email,
+          changed_at: new Date().toISOString(),
+        },
+      });
     }
 
     return NextResponse.json({ server });

@@ -13,14 +13,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
 interface Host {
   id: string;
   name: string;
-  location: string | null;
   description: string | null;
+  region_id: string | null;
+}
+
+interface Region {
+  id: string;
+  name: string;
 }
 
 interface EditHostDialogProps {
@@ -33,19 +45,35 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [regions, setRegions] = useState<Region[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
-    location: '',
     description: '',
+    region_id: '',
   });
+
+  // Fetch regions when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetch('/api/admin/regions')
+        .then(res => res.json())
+        .then(data => {
+          // API returns { regions: [...] }
+          if (data.regions && Array.isArray(data.regions)) {
+            setRegions(data.regions);
+          }
+        })
+        .catch(err => console.error('Failed to fetch regions:', err));
+    }
+  }, [open]);
 
   useEffect(() => {
     if (host) {
       setFormData({
         name: host.name,
-        location: host.location || '',
         description: host.description || '',
+        region_id: host.region_id || '',
       });
     }
   }, [host]);
@@ -141,13 +169,23 @@ export function EditHostDialog({ host, open, onOpenChange }: EditHostDialogProps
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="edit-location">Location</Label>
-              <Input
-                id="edit-location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g., Virginia, USA"
-              />
+              <Label htmlFor="edit-region">Region</Label>
+              <Select
+                value={formData.region_id || 'none'}
+                onValueChange={(value) => setFormData({ ...formData, region_id: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a region (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Region</SelectItem>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.id}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">

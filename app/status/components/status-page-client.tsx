@@ -301,6 +301,16 @@ export function StatusPageClient() {
                           <CardDescription className="mt-2">
                             {incident.description}
                           </CardDescription>
+                          {incident.affected_region_names && incident.affected_region_names.length > 0 && (
+                            <div className="mt-3 flex items-start gap-2">
+                              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                Affected Regions:
+                              </span>
+                              <span className="text-xs text-gray-700 dark:text-gray-300">
+                                {incident.affected_region_names.join(', ')}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
@@ -350,6 +360,16 @@ export function StatusPageClient() {
                             Resolved {new Date(incident.resolved_at).toLocaleDateString()}
                           </span>
                         </div>
+                        {incident.affected_region_names && incident.affected_region_names.length > 0 && (
+                          <div className="mt-2 flex items-start gap-2">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                              Affected Regions:
+                            </span>
+                            <span className="text-xs text-gray-700 dark:text-gray-300">
+                              {incident.affected_region_names.join(', ')}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardHeader>

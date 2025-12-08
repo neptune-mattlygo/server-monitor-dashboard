@@ -20,7 +20,7 @@ import { ServerEditDialog } from './server-edit-dialog';
 import { ServerEventHistoryDialog } from './server-event-history-dialog';
 import { RelativeTime } from './relative-time';
 import { useRouter } from 'next/navigation';
-import { Server as ServerIcon, MapPin, Globe, History } from 'lucide-react';
+import { Server as ServerIcon, MapPin, Globe, History, Edit } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 type SortField = 'current_status' | 'name' | 'server_type' | 'ip_address';
@@ -49,7 +49,7 @@ interface Server {
 interface Host {
   id: string;
   name: string;
-  location: string | null;
+  region_id: string | null;
   servers: Server[];
 }
 
@@ -93,10 +93,13 @@ function getStatusOrder(status: ServerStatus): number {
   }
 }
 
-export function HostServerTable({ host, allHosts, onDragStart }: { 
+export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, selectedServerIds, onServerSelect }: { 
   host: Host; 
   allHosts: Host[];
   onDragStart?: (serverId: string) => void;
+  onDragEnd?: () => void;
+  selectedServerIds?: Set<string>;
+  onServerSelect?: (serverId: string, isCtrlOrCmd: boolean) => void;
 }) {
   const [sortField, setSortField] = useState<SortField>('current_status');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -230,14 +233,37 @@ export function HostServerTable({ host, allHosts, onDragStart }: {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedServers.map((server) => (
-            <TableRow 
-              key={server.id}
-              draggable
-              onDragStart={() => onDragStart?.(server.id)}
-              onClick={() => handleRowClick(server)}
-              className="cursor-move hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
+          {sortedServers.map((server) => {
+            const isSelected = selectedServerIds?.has(server.id) || false;
+            
+            return (
+              <TableRow 
+                key={server.id}
+                draggable
+                onDragStart={() => onDragStart?.(server.id)}
+                onDragEnd={() => onDragEnd?.()}
+                onDoubleClick={() => handleRowClick(server)}
+                onClick={(e) => {
+                  // Check if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
+                  const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+                  
+                  if (isCtrlOrCmd && onServerSelect) {
+                    // Multi-select mode with Ctrl/Cmd held
+                    e.stopPropagation();
+                    onServerSelect(server.id, true);
+                  } else if (onServerSelect) {
+                    // Single select for multi-select mode (without Ctrl/Cmd)
+                    e.stopPropagation();
+                    onServerSelect(server.id, false);
+                  } else {
+                    // No multi-select mode - open edit dialog
+                    handleRowClick(server);
+                  }
+                }}
+                className={`cursor-move hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                  isSelected ? 'bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500 ring-inset' : ''
+                }`}
+              >
               <TableCell>
                 <Badge variant={getStatusBadgeVariant(server.current_status)} style={{ minWidth: '100px' }}>
                   {getStatusIcon(server.current_status)} {server.current_status}
@@ -261,14 +287,6 @@ export function HostServerTable({ host, allHosts, onDragStart }: {
                             Host: {host.name}
                           </span>
                         </div>
-                        {host.location && (
-                          <div className="flex items-center gap-2">
-                            <Globe className="h-3 w-3 text-gray-500" />
-                            <span className="text-gray-600 dark:text-gray-400">
-                              {host.location}
-                            </span>
-                          </div>
-                        )}
                         <div className="pt-1">
                           <Badge variant={getStatusBadgeVariant(server.current_status)}>
                             {server.current_status}
@@ -305,22 +323,36 @@ export function HostServerTable({ host, allHosts, onDragStart }: {
                 )}
               </TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEventHistoryServerId(server.id);
-                    setEventHistoryServerName(server.name);
-                    setEventHistoryOpen(true);
-                  }}
-                  title="View event history"
-                >
-                  <History className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRowClick(server);
+                    }}
+                    title="Edit server"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEventHistoryServerId(server.id);
+                      setEventHistoryServerName(server.name);
+                      setEventHistoryOpen(true);
+                    }}
+                    title="View event history"
+                  >
+                    <History className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
 
