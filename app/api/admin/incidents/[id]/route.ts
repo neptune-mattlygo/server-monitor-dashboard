@@ -83,9 +83,13 @@ export async function PATCH(
     // Get current incident to check if status is changing
     const { data: currentIncident } = await supabaseAdmin
       .from('status_incidents')
-      .select('status, notified_at')
+      .select('status, notified_at, affected_servers')
       .eq('id', id)
       .single();
+
+    if (!currentIncident) {
+      return NextResponse.json({ error: 'Incident not found' }, { status: 404 });
+    }
 
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
