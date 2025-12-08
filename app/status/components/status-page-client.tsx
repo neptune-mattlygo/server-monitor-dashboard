@@ -272,34 +272,39 @@ export function StatusPageClient() {
           </CardContent>
         </Card>
 
-        {/* Server Stats / System Overview */}
+        {/* System Status Message */}
         <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>System Overview</CardTitle>
-            <CardDescription>Current status of all monitored services</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{data.servers.total}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Services</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">{data.servers.up}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Operational</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">{data.servers.down}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Down</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{data.servers.degraded}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Degraded</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{data.servers.maintenance}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Maintenance</div>
-              </div>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center gap-3 py-4">
+              {data.status === 'operational' ? (
+                <>
+                  <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  <div className="text-2xl font-semibold text-green-600 dark:text-green-400">
+                    All systems operational
+                  </div>
+                </>
+              ) : data.status === 'degraded' ? (
+                <>
+                  <AlertTriangle className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+                  <div className="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">
+                    Degraded performance
+                  </div>
+                </>
+              ) : data.status === 'outage' ? (
+                <>
+                  <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+                  <div className="text-2xl font-semibold text-red-600 dark:text-red-400">
+                    Service outage
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Clock className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  <div className="text-2xl font-semibold text-blue-600 dark:text-blue-400">
+                    Scheduled maintenance
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
