@@ -41,7 +41,6 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
   
   const [formData, setFormData] = useState({
     name: '',
-    location: '',
     description: '',
     region_id: '',
   });
@@ -52,8 +51,9 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
       fetch('/api/admin/regions')
         .then(res => res.json())
         .then(data => {
-          if (Array.isArray(data)) {
-            setRegions(data);
+          // API returns { regions: [...] }
+          if (data.regions && Array.isArray(data.regions)) {
+            setRegions(data.regions);
           }
         })
         .catch(err => console.error('Failed to fetch regions:', err));
@@ -84,7 +84,6 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
       // Reset form
       setFormData({
         name: '',
-        location: '',
         description: '',
         region_id: '',
       });
@@ -121,16 +120,6 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., AWS US-East-1"
                 required
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g., Virginia, USA"
               />
             </div>
 

@@ -30,10 +30,11 @@ interface Props {
   onSuccess: () => void;
   servers: { id: string; name: string }[];
   regions: { id: string; name: string }[];
+  hosts: { id: string; name: string }[];
   incident?: any;
 }
 
-export function IncidentFormDialog({ open, onOpenChange, onSuccess, servers, regions, incident }: Props) {
+export function IncidentFormDialog({ open, onOpenChange, onSuccess, servers, regions, hosts, incident }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -43,9 +44,60 @@ export function IncidentFormDialog({ open, onOpenChange, onSuccess, servers, reg
     severity: 'major',
     affected_servers: [] as string[],
     affected_regions: [] as string[],
+    affected_hosts: [] as string[],
     status: 'investigating',
     notify_subscribers: false,
   });
+
+  // Auto-select hosts and servers when regions change
+  const handleRegionChange = (selectedRegions: string[]) => {
+    // Find all hosts in selected regions
+    const hostsInRegions = hosts.filter(h => 
+      selectedRegions.some(regionId => {
+        const host = hosts.find(host => host.id === h.id);
+        return (host as any)?.region_id === regionId;
+      })
+    ).map(h => h.id);
+
+    // Find all servers in selected regions
+    const serversInRegions = servers.filter(s =>
+      selectedRegions.some(regionId => {
+        const server = servers.find(srv => srv.id === s.id);
+        return (server as any)?.region_id === regionId;
+      })
+    ).map(s => s.id);
+
+    // Merge with existing selections (don't remove manually selected items)
+    const newHosts = [...new Set([...formData.affected_hosts, ...hostsInRegions])];
+    const newServers = [...new Set([...formData.affected_servers, ...serversInRegions])];
+
+    setFormData({
+      ...formData,
+      affected_regions: selectedRegions,
+      affected_hosts: newHosts,
+      affected_servers: newServers,
+    });
+  };
+
+  // Auto-select servers when hosts change
+  const handleHostChange = (selectedHosts: string[]) => {
+    // Find all servers in selected hosts
+    const serversInHosts = servers.filter(s =>
+      selectedHosts.some(hostId => {
+        const server = servers.find(srv => srv.id === s.id);
+        return (server as any)?.host_id === hostId;
+      })
+    ).map(s => s.id);
+
+    // Merge with existing selections
+    const newServers = [...new Set([...formData.affected_servers, ...serversInHosts])];
+
+    setFormData({
+      ...formData,
+      affected_hosts: selectedHosts,
+      affected_servers: newServers,
+    });
+  };
 
   useEffect(() => {
     if (incident) {
@@ -56,6 +108,7 @@ export function IncidentFormDialog({ open, onOpenChange, onSuccess, servers, reg
         severity: incident.severity,
         affected_servers: incident.affected_servers || [],
         affected_regions: incident.affected_regions || [],
+        affected_hosts: incident.affected_hosts || [],
         status: incident.status,
         notify_subscribers: incident.notify_subscribers ?? false,
       });
@@ -67,6 +120,7 @@ export function IncidentFormDialog({ open, onOpenChange, onSuccess, servers, reg
         severity: 'major',
         affected_servers: [],
         affected_regions: [],
+        affected_hosts: [],
         status: 'investigating',
         notify_subscribers: false,
       });
@@ -79,8 +133,8 @@ export function IncidentFormDialog({ open, onOpenChange, onSuccess, servers, reg
     setLoading(true);
     setError('');
 
-    if (formData.affected_servers.length === 0 && formData.affected_regions.length === 0) {
-      setError('Please select at least one affected server or region');
+    if (formData.affected_servers.length === 0 && formData.affected_regions.length === 0 && formData.affected_hosts.length === 0) {
+      setError('Please select at least one affected server, region, or host');
       setLoading(false);
       return;
     }
@@ -114,6 +168,7 @@ export function IncidentFormDialog({ open, onOpenChange, onSuccess, servers, reg
 
   const serverOptions = servers.map(s => ({ value: s.id, label: s.name }));
   const regionOptions = regions.map(r => ({ value: r.id, label: r.name }));
+  const hostOptions = hosts.map(h => ({ value: h.id, label: h.name }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -207,25 +262,42 @@ export function IncidentFormDialog({ open, onOpenChange, onSuccess, servers, reg
           </div>
 
           <div>
+            <Label>Affected Regions</Label>
+            <MultiSelect
+              options={regionOptions}
+              selected={formData.affected_regions}
+              onChange={handleRegionChange}
+              placeholder="Select affected regions"
+              emptyMessage="No regions found"
+            />
+          </div>
+
+          <div>
+            <Label>Affected Hosts</Label>
+            <MultiSelect
+              options={hostOptions}
+              selected={formData.affected_hosts}
+              onChange={handleHostChange}
+              placeholder="Select affected hosts"
+              emptyMessage="No hosts found"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Hosts from selected regions are automatically included
+            </p>
+          </div>
+
+          <div>
             <Label>Affected Servers</Label>
             <MultiSelect
               options={serverOptions}
               selected={formData.affected_servers}
               onChange={(selected) => setFormData({ ...formData, affected_servers: selected })}
-              placeholder="Select affected servers"
+              placeholder="Select individual servers"
               emptyMessage="No servers found"
             />
-          </div>
-
-          <div>
-            <Label>Affected Regions</Label>
-            <MultiSelect
-              options={regionOptions}
-              selected={formData.affected_regions}
-              onChange={(selected) => setFormData({ ...formData, affected_regions: selected })}
-              placeholder="Select affected regions"
-              emptyMessage="No regions found"
-            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Servers from selected regions and hosts are automatically included
+            </p>
           </div>
 
           {!incident && (

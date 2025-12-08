@@ -29,16 +29,31 @@ export function RegionsManager({ initialRegions }: Props) {
   const [regions, setRegions] = useState<Region[]>(initialRegions);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  const handleRegionCreated = () => {
+  const refreshRegions = async () => {
+    try {
+      const response = await fetch('/api/admin/regions');
+      const data = await response.json();
+      if (data.regions) {
+        setRegions(data.regions);
+      }
+    } catch (error) {
+      console.error('Failed to refresh regions:', error);
+    }
+  };
+
+  const handleRegionCreated = async () => {
     setShowCreateDialog(false);
+    await refreshRegions();
     router.refresh();
   };
 
-  const handleRegionUpdated = () => {
+  const handleRegionUpdated = async () => {
+    await refreshRegions();
     router.refresh();
   };
 
-  const handleRegionDeleted = () => {
+  const handleRegionDeleted = async () => {
+    await refreshRegions();
     router.refresh();
   };
 

@@ -86,6 +86,13 @@ export async function GET() {
       .gte('resolved_at', sevenDaysAgo.toISOString())
       .order('resolved_at', { ascending: false });
 
+    // Get regions
+    const { data: regionsData } = await supabaseAdmin
+      .from('regions')
+      .select('id, name, slug, description')
+      .eq('is_active', true)
+      .order('display_order');
+
     // Sort incident updates by created_at desc for each incident
     // Filter out the initial update (first update that matches incident creation)
     const processIncidents = (incidents: any[]) => {
@@ -102,22 +109,25 @@ export async function GET() {
           (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         
+        // Get region names for affected regions
+        const affectedRegionIds = incident.affected_regions || [];
+        const affectedRegionNames = affectedRegionIds
+          .map((regionId: string) => {
+            const region = regionsData?.find(r => r.id === regionId);
+            return region?.name;
+          })
+          .filter(Boolean);
+        
         return {
           ...incident,
-          incident_updates: sortedDesc
+          incident_updates: sortedDesc,
+          affected_region_names: affectedRegionNames
         };
       });
     };
 
     const activeIncidentsWithUpdates = processIncidents(activeIncidents || []);
     const resolvedIncidentsWithUpdates = processIncidents(resolvedIncidents || []);
-
-    // Get regions
-    const { data: regions } = await supabaseAdmin
-      .from('regions')
-      .select('id, name, slug, description')
-      .eq('is_active', true)
-      .order('display_order');
 
     // Calculate uptime percentage (last 90 days)
     const ninetyDaysAgo = new Date();
@@ -154,7 +164,7 @@ export async function GET() {
       uptime_percentage: config?.show_uptime_percentage ? uptimePercentage.toFixed(2) : null,
       active_incidents: activeIncidentsWithUpdates || [],
       resolved_incidents: resolvedIncidentsWithUpdates || [],
-      regions: regions || [],
+      regions: regionsData || [],
       last_updated: new Date().toISOString(),
     });
   } catch (error) {

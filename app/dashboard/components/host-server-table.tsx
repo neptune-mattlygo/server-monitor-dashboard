@@ -49,7 +49,6 @@ interface Server {
 interface Host {
   id: string;
   name: string;
-  location: string | null;
   region_id: string | null;
   servers: Server[];
 }
@@ -94,11 +93,13 @@ function getStatusOrder(status: ServerStatus): number {
   }
 }
 
-export function HostServerTable({ host, allHosts, onDragStart, onDragEnd }: { 
+export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, selectedServerIds, onServerSelect }: { 
   host: Host; 
   allHosts: Host[];
   onDragStart?: (serverId: string) => void;
   onDragEnd?: () => void;
+  selectedServerIds?: Set<string>;
+  onServerSelect?: (serverId: string, isCtrlOrCmd: boolean) => void;
 }) {
   const [sortField, setSortField] = useState<SortField>('current_status');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -232,15 +233,35 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd }: {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedServers.map((server) => (
-            <TableRow 
-              key={server.id}
-              draggable
-              onDragStart={() => onDragStart?.(server.id)}
-              onDragEnd={() => onDragEnd?.()}
-              onClick={() => handleRowClick(server)}
-              className="cursor-move hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
+          {sortedServers.map((server) => {
+            const isSelected = selectedServerIds?.has(server.id) || false;
+            
+            return (
+              <TableRow 
+                key={server.id}
+                draggable
+                onDragStart={() => onDragStart?.(server.id)}
+                onDragEnd={() => onDragEnd?.()}
+                onClick={(e) => {
+                  // Check if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
+                  const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+                  
+                  if (isCtrlOrCmd && onServerSelect) {
+                    // Multi-select mode
+                    e.stopPropagation();
+                    onServerSelect(server.id, true);
+                  } else if (onServerSelect && !e.defaultPrevented) {
+                    // Single select or toggle
+                    onServerSelect(server.id, false);
+                  } else {
+                    // Fallback to edit dialog
+                    handleRowClick(server);
+                  }
+                }}
+                className={`cursor-move hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                  isSelected ? 'bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500 ring-inset' : ''
+                }`}
+              >
               <TableCell>
                 <Badge variant={getStatusBadgeVariant(server.current_status)} style={{ minWidth: '100px' }}>
                   {getStatusIcon(server.current_status)} {server.current_status}
@@ -264,14 +285,6 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd }: {
                             Host: {host.name}
                           </span>
                         </div>
-                        {host.location && (
-                          <div className="flex items-center gap-2">
-                            <Globe className="h-3 w-3 text-gray-500" />
-                            <span className="text-gray-600 dark:text-gray-400">
-                              {host.location}
-                            </span>
-                          </div>
-                        )}
                         <div className="pt-1">
                           <Badge variant={getStatusBadgeVariant(server.current_status)}>
                             {server.current_status}
@@ -323,7 +336,8 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd }: {
                 </Button>
               </TableCell>
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
 
