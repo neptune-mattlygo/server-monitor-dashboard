@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Clear cookie and redirect to logout page
-    const response = NextResponse.redirect(new URL('/logout', request.url));
+    // Clear cookie
+    const response = NextResponse.json({ success: true });
     response.cookies.set('session', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

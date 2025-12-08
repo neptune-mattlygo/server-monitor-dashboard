@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
       await deleteSession(sessionId);
     }
 
-    // Clear session cookie and redirect to logout page
+    // Clear session cookie
     await clearSessionCookie();
 
-    return NextResponse.redirect(new URL('/logout', request.url));
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json(

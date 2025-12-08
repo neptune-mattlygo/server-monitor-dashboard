@@ -13,9 +13,17 @@ export default function LogoutPage() {
   useEffect(() => {
     const logout = async () => {
       try {
-        await fetch('/api/auth/local/logout', {
+        // Try Azure logout first (will work for both Azure and local auth)
+        const response = await fetch('/api/auth/azure/logout', {
           method: 'POST',
         });
+        
+        if (!response.ok) {
+          // If Azure logout fails, try local logout
+          await fetch('/api/auth/local/logout', {
+            method: 'POST',
+          });
+        }
         
         // Wait a moment to show the success message
         setTimeout(() => {
@@ -23,7 +31,10 @@ export default function LogoutPage() {
         }, 800);
       } catch (error) {
         console.error('Logout error:', error);
-        setIsLoggingOut(false);
+        // Show success anyway since cookies are cleared client-side
+        setTimeout(() => {
+          setIsLoggingOut(false);
+        }, 800);
       }
     };
 

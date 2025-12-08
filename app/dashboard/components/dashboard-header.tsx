@@ -178,15 +178,13 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <form action="/api/auth/local/logout" method="POST" className="w-full">
-                  <button
-                    type="submit"
-                    className="flex w-full items-center text-red-600 dark:text-red-400"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </button>
-                </form>
+                <a
+                  href="/logout"
+                  className="flex w-full items-center text-red-600 dark:text-red-400 cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </a>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
