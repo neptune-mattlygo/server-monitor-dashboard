@@ -50,6 +50,7 @@ interface Host {
   id: string;
   name: string;
   location: string | null;
+  region_id: string | null;
   servers: Server[];
 }
 

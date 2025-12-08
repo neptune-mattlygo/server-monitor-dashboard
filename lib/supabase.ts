@@ -44,6 +44,7 @@ export type Host = {
   name: string;
   location: string | null;
   description: string | null;
+  region_id: string | null;
   created_at: string;
   updated_at: string;
 };

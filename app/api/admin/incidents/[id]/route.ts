@@ -91,7 +91,30 @@ export async function PATCH(
     if (description !== undefined) updateData.description = description;
     if (incident_type !== undefined) updateData.incident_type = incident_type;
     if (severity !== undefined) updateData.severity = severity;
-    if (affected_servers !== undefined) updateData.affected_servers = affected_servers;
+    
+    // Handle affected servers - collect from both manual selection and regions
+    if (affected_servers !== undefined || affected_regions !== undefined) {
+      let allAffectedServers = affected_servers || [];
+
+      // If regions are selected, fetch all servers in those regions
+      if (affected_regions && affected_regions.length > 0) {
+        const { data: regionServers, error: regionError } = await supabaseAdmin
+          .from('servers')
+          .select('id')
+          .in('region_id', affected_regions);
+
+        if (regionError) {
+          console.error('Error fetching servers by region:', regionError);
+        } else if (regionServers) {
+          const regionServerIds = regionServers.map(s => s.id);
+          // Combine with manually selected servers and remove duplicates
+          allAffectedServers = [...new Set([...allAffectedServers, ...regionServerIds])];
+        }
+      }
+
+      updateData.affected_servers = allAffectedServers;
+    }
+    
     if (affected_regions !== undefined) updateData.affected_regions = affected_regions;
     if (status !== undefined) {
       updateData.status = status;

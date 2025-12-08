@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -13,8 +13,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+
+interface Region {
+  id: string;
+  name: string;
+}
 
 interface AddHostDialogProps {
   open: boolean;
@@ -25,12 +37,28 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [regions, setRegions] = useState<Region[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
     location: '',
     description: '',
+    region_id: '',
   });
+
+  // Fetch regions when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetch('/api/admin/regions')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setRegions(data);
+          }
+        })
+        .catch(err => console.error('Failed to fetch regions:', err));
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +86,7 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
         name: '',
         location: '',
         description: '',
+        region_id: '',
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -103,6 +132,26 @@ export function AddHostDialog({ open, onOpenChange }: AddHostDialogProps) {
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="e.g., Virginia, USA"
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="region">Region</Label>
+              <Select
+                value={formData.region_id || 'none'}
+                onValueChange={(value) => setFormData({ ...formData, region_id: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a region (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Region</SelectItem>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.id}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">

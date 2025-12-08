@@ -30,6 +30,7 @@ interface Host {
   name: string;
   location: string | null;
   description: string | null;
+  region_id: string | null;
   servers: Server[];
 }
 

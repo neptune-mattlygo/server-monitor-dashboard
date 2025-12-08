@@ -83,6 +83,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Collect all affected server IDs
+    let allAffectedServers = affected_servers || [];
+
+    // If regions are selected, fetch all servers in those regions
+    if (affected_regions && affected_regions.length > 0) {
+      const { data: regionServers, error: regionError } = await supabaseAdmin
+        .from('servers')
+        .select('id')
+        .in('region_id', affected_regions);
+
+      if (regionError) {
+        console.error('Error fetching servers by region:', regionError);
+      } else if (regionServers) {
+        const regionServerIds = regionServers.map(s => s.id);
+        // Combine with manually selected servers and remove duplicates
+        allAffectedServers = [...new Set([...allAffectedServers, ...regionServerIds])];
+      }
+    }
+
     const { data: incident, error } = await supabaseAdmin
       .from('status_incidents')
       .insert({
@@ -90,7 +109,7 @@ export async function POST(request: NextRequest) {
         description,
         incident_type,
         severity,
-        affected_servers: affected_servers || [],
+        affected_servers: allAffectedServers,
         affected_regions: affected_regions || [],
         status: status || 'investigating',
         notify_subscribers: notify_subscribers ?? false,
