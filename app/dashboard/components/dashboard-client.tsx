@@ -240,6 +240,28 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
 
   return (
     <>
+      {/* Floating Selection Banner */}
+      {selectedServerIds.size > 0 && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-950/95 rounded-lg border border-blue-200 dark:border-blue-800 shadow-lg backdrop-blur-sm">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              {selectedServerIds.size} server{selectedServerIds.size > 1 ? 's' : ''} selected
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedServerIds(new Set())}
+              className="h-6 px-2 text-xs"
+            >
+              Clear
+            </Button>
+            <span className="text-xs text-blue-600 dark:text-blue-400">
+              Drag to move
+            </span>
+          </div>
+        </div>
+      )}
+      
       {/* Summary Stats */}
       <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card 
@@ -348,25 +370,6 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
               </TooltipContent>
             </Tooltip>
           </div>
-          
-          {selectedServerIds.size > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                {selectedServerIds.size} server{selectedServerIds.size > 1 ? 's' : ''} selected
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedServerIds(new Set())}
-                className="h-6 px-2 text-xs"
-              >
-                Clear
-              </Button>
-              <span className="text-xs text-blue-600 dark:text-blue-400">
-                Drag to move
-              </span>
-            </div>
-          )}
           
           <div className="flex gap-3">
           <Tooltip>
