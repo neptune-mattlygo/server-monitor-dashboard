@@ -14,11 +14,15 @@ interface ServerEvent {
   id: string;
   server_id: string;
   event_type: string;
+  event_source: string;
+  status: string | null;
+  message: string | null;
   old_status: ServerStatus | null;
   new_status: ServerStatus | null;
   response_time_ms: number | null;
   error_message: string | null;
   metadata: any;
+  payload: any;
   created_at: string;
   server: {
     name: string;
