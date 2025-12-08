@@ -52,7 +52,7 @@ export default function LoginPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border-gray-300"
+            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 hover:text-gray-900 border-gray-300"
             onClick={handleAzureLogin}
           >
             <svg className="w-5 h-5" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
