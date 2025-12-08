@@ -94,10 +94,11 @@ function getStatusOrder(status: ServerStatus): number {
   }
 }
 
-export function HostServerTable({ host, allHosts, onDragStart }: { 
+export function HostServerTable({ host, allHosts, onDragStart, onDragEnd }: { 
   host: Host; 
   allHosts: Host[];
   onDragStart?: (serverId: string) => void;
+  onDragEnd?: () => void;
 }) {
   const [sortField, setSortField] = useState<SortField>('current_status');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -236,6 +237,7 @@ export function HostServerTable({ host, allHosts, onDragStart }: {
               key={server.id}
               draggable
               onDragStart={() => onDragStart?.(server.id)}
+              onDragEnd={() => onDragEnd?.()}
               onClick={() => handleRowClick(server)}
               className="cursor-move hover:bg-gray-50 dark:hover:bg-gray-800"
             >

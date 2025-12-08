@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -55,6 +55,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const [selectedHost, setSelectedHost] = useState<Host | null>(null);
   const [draggedServerId, setDraggedServerId] = useState<string | null>(null);
   const [dragOverHostId, setDragOverHostId] = useState<string | null>(null);
+  const [autoScrollInterval, setAutoScrollInterval] = useState<NodeJS.Timeout | null>(null);
   const [collapsedHosts, setCollapsedHosts] = useState<Set<string>>(new Set());
 
   const handleFilterClick = (status: ServerStatus | 'all') => {
@@ -70,18 +71,63 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
     setDraggedServerId(serverId);
   };
 
+  const handleDragEnd = () => {
+    setDraggedServerId(null);
+    if (autoScrollInterval) {
+      clearInterval(autoScrollInterval);
+      setAutoScrollInterval(null);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent, hostId: string) => {
     e.preventDefault();
     setDragOverHostId(hostId);
+
+    // Auto-scroll when dragging near the edges
+    const scrollThreshold = 100; // pixels from edge
+    const scrollSpeed = 10; // pixels per interval
+    const mouseY = e.clientY;
+    const windowHeight = window.innerHeight;
+
+    // Clear existing interval
+    if (autoScrollInterval) {
+      clearInterval(autoScrollInterval);
+      setAutoScrollInterval(null);
+    }
+
+    // Scroll up when near top
+    if (mouseY < scrollThreshold) {
+      const interval = setInterval(() => {
+        window.scrollBy(0, -scrollSpeed);
+      }, 16); // ~60fps
+      setAutoScrollInterval(interval);
+    }
+    // Scroll down when near bottom
+    else if (mouseY > windowHeight - scrollThreshold) {
+      const interval = setInterval(() => {
+        window.scrollBy(0, scrollSpeed);
+      }, 16); // ~60fps
+      setAutoScrollInterval(interval);
+    }
   };
 
   const handleDragLeave = () => {
     setDragOverHostId(null);
+    if (autoScrollInterval) {
+      clearInterval(autoScrollInterval);
+      setAutoScrollInterval(null);
+    }
   };
 
   const handleDrop = async (e: React.DragEvent, targetHostId: string) => {
     e.preventDefault();
     setDragOverHostId(null);
+
+    // Stop auto-scrolling
+    if (autoScrollInterval) {
+      clearInterval(autoScrollInterval);
+      setAutoScrollInterval(null);
+    }
 
     if (!draggedServerId) return;
 
@@ -117,6 +163,15 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
       return newSet;
     });
   };
+
+  // Cleanup auto-scroll interval on unmount
+  useEffect(() => {
+    return () => {
+      if (autoScrollInterval) {
+        clearInterval(autoScrollInterval);
+      }
+    };
+  }, [autoScrollInterval]);
 
   return (
     <>
@@ -327,6 +382,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                       host={filteredHost} 
                       allHosts={hosts} 
                       onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
                     />
                   </CardContent>
                 )}
