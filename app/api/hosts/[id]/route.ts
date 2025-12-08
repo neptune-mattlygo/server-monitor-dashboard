@@ -19,7 +19,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, location, description } = body;
+    const { name, description, region_id } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -31,8 +31,8 @@ export async function PATCH(
       .from('hosts')
       .update({
         name,
-        location: location || null,
         description: description || null,
+        region_id: region_id || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

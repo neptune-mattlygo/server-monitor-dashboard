@@ -28,19 +28,22 @@ interface Server {
 interface Host {
   id: string;
   name: string;
-  location: string | null;
   description: string | null;
   servers: Server[];
 }
 
 async function getDashboardData() {
   try {
-    // Fetch hosts with their servers
+    // Fetch hosts with their servers and regions
     const { data: hosts, error: hostsError } = await supabaseAdmin
       .from('hosts')
       .select(`
         *,
-        servers (*)
+        servers (*),
+        regions (
+          id,
+          name
+        )
       `)
       .order('name');
 

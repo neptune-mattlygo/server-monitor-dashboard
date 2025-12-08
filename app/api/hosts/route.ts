@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, location, description } = body;
+    const { name, description, region_id } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
       .from('hosts')
       .insert({
         name,
-        location,
         description,
+        region_id: region_id || null,
       })
       .select()
       .single();

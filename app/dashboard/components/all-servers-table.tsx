@@ -34,7 +34,7 @@ interface Server {
   ip_address: string | null;
   current_status: ServerStatus;
   host_name?: string;
-  host_location?: string | null;
+  host_region?: string | null;
   uptime_display?: string | null;
   last_backup?: {
     created_at: string;
@@ -246,11 +246,11 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                             </span>
                           </div>
                         )}
-                        {server.host_location && (
+                        {server.host_region && (
                           <div className="flex items-center gap-2">
                             <Globe className="h-3 w-3 text-gray-500" />
                             <span className="text-gray-600 dark:text-gray-400">
-                              {server.host_location}
+                              Region: {server.host_region}
                             </span>
                           </div>
                         )}

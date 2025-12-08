@@ -20,6 +20,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ExternalLink } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -27,11 +35,15 @@ interface ServerEvent {
   id: string;
   server_id: string;
   event_type: string;
+  event_source: string;
+  status: string | null;
+  message: string | null;
   old_status: ServerStatus | null;
   new_status: ServerStatus | null;
   response_time_ms: number | null;
   error_message: string | null;
   metadata: any;
+  payload: any;
   created_at: string;
   server: {
     name: string;
@@ -90,6 +102,7 @@ export function EventsTableClient({ events }: { events: ServerEvent[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedEvent, setSelectedEvent] = useState<ServerEvent | null>(null);
 
   // Get unique event types and statuses for filters
   const eventTypes = useMemo(() => {
@@ -289,7 +302,11 @@ export function EventsTableClient({ events }: { events: ServerEvent[] }) {
           </TableHeader>
           <TableBody>
             {filteredAndSortedEvents.map((event) => (
-              <TableRow key={event.id}>
+              <TableRow 
+                key={event.id} 
+                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                onClick={() => setSelectedEvent(event)}
+              >
                 <TableCell className="text-sm text-gray-600 dark:text-gray-400">
                   {new Date(event.created_at).toLocaleString('en-US', { 
                     year: 'numeric',
@@ -371,6 +388,230 @@ export function EventsTableClient({ events }: { events: ServerEvent[] }) {
           </Button>
         </div>
       )}
+      
+      {/* Event Details Dialog */}
+      <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Event Details</DialogTitle>
+            <DialogDescription>
+              Complete information about this event
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedEvent && (
+            <div className="space-y-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Timestamp</Label>
+                  <p className="mt-1 text-sm">
+                    {new Date(selectedEvent.created_at).toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Event Type</Label>
+                  <div className="mt-1">
+                    <Badge variant={getEventBadgeVariant(selectedEvent.event_type)} className="capitalize">
+                      {selectedEvent.event_type.replace(/_/g, ' ')}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Server Info */}
+              <div>
+                <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Server</Label>
+                <div className="mt-1">
+                  <p className="text-sm font-medium">{selectedEvent.server?.name || 'Unknown Server'}</p>
+                  {selectedEvent.server?.ip_address && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{selectedEvent.server.ip_address}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Event Source & Status */}
+              <div className="grid grid-cols-2 gap-4">
+                {selectedEvent.event_source && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Event Source</Label>
+                    <p className="mt-1 text-sm capitalize">{selectedEvent.event_source}</p>
+                  </div>
+                )}
+                {selectedEvent.status && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</Label>
+                    <div className="mt-1">
+                      <Badge variant="outline" className="capitalize">
+                        {selectedEvent.status.replace(/_/g, ' ')}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Status Change */}
+              {(selectedEvent.old_status || selectedEvent.new_status) && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Status Change</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    {selectedEvent.old_status && (
+                      <Badge variant={getStatusBadgeVariant(selectedEvent.old_status)} className="capitalize">
+                        {selectedEvent.old_status}
+                      </Badge>
+                    )}
+                    {selectedEvent.old_status && selectedEvent.new_status && (
+                      <span className="text-gray-400">→</span>
+                    )}
+                    {selectedEvent.new_status && (
+                      <Badge variant={getStatusBadgeVariant(selectedEvent.new_status)} className="capitalize">
+                        {selectedEvent.new_status}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Message */}
+              {selectedEvent.message && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Message</Label>
+                  <p className="mt-1 text-sm">{selectedEvent.message}</p>
+                </div>
+              )}
+
+              {/* Response Time */}
+              {selectedEvent.response_time_ms !== null && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Response Time</Label>
+                  <p className="mt-1 text-sm">{selectedEvent.response_time_ms}ms</p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {selectedEvent.error_message && (
+                <div>
+                  <Label className="text-sm font-medium text-red-600 dark:text-red-400">Error Message</Label>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 p-3 rounded">
+                    {selectedEvent.error_message}
+                  </p>
+                </div>
+              )}
+
+              {/* Payload (incident details, etc.) */}
+              {selectedEvent.payload && Object.keys(selectedEvent.payload).length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Payload Details</Label>
+                  <div className="mt-2 space-y-2">
+                    {selectedEvent.payload.incident_id && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Incident ID</span>
+                        <code className="text-xs bg-white dark:bg-gray-900 px-2 py-1 rounded">
+                          {selectedEvent.payload.incident_id}
+                        </code>
+                      </div>
+                    )}
+                    {selectedEvent.payload.incident_url && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Incident Link</span>
+                        <a 
+                          href={selectedEvent.payload.incident_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          View Incidents <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
+                    {selectedEvent.payload.created_by_email && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Created By</span>
+                        <span className="text-sm font-medium">{selectedEvent.payload.created_by_email}</span>
+                      </div>
+                    )}
+                    {selectedEvent.payload.updated_by_email && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Updated By</span>
+                        <span className="text-sm font-medium">{selectedEvent.payload.updated_by_email}</span>
+                      </div>
+                    )}
+                    {selectedEvent.payload.deleted_by_email && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Deleted By</span>
+                        <span className="text-sm font-medium">{selectedEvent.payload.deleted_by_email}</span>
+                      </div>
+                    )}
+                    {selectedEvent.payload.added_by_email && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Added By</span>
+                        <span className="text-sm font-medium">{selectedEvent.payload.added_by_email}</span>
+                      </div>
+                    )}
+                    {selectedEvent.payload.created_at && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Action Time</span>
+                        <span className="text-sm">
+                          {new Date(selectedEvent.payload.created_at || selectedEvent.payload.updated_at || selectedEvent.payload.deleted_at || selectedEvent.payload.added_at).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {selectedEvent.payload.severity && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Severity</span>
+                        <Badge variant={selectedEvent.payload.severity === 'critical' ? 'destructive' : 'default'} className="capitalize">
+                          {selectedEvent.payload.severity}
+                        </Badge>
+                      </div>
+                    )}
+                    {selectedEvent.payload.incident_type && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm">Incident Type</span>
+                        <span className="text-sm capitalize">{selectedEvent.payload.incident_type}</span>
+                      </div>
+                    )}
+                    {selectedEvent.payload.description && (
+                      <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="text-sm font-medium">Description</span>
+                        <p className="text-sm mt-1 text-gray-700 dark:text-gray-300">{selectedEvent.payload.description}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata */}
+              {selectedEvent.metadata && Object.keys(selectedEvent.metadata).length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Metadata</Label>
+                  <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-auto max-h-60">
+                    {JSON.stringify(selectedEvent.metadata, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Raw Payload (if different from metadata) */}
+              {selectedEvent.payload && Object.keys(selectedEvent.payload).length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Full Payload (JSON)</Label>
+                  <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-auto max-h-60">
+                    {JSON.stringify(selectedEvent.payload, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -34,9 +34,10 @@ interface Props {
   offset: number;
   servers: { id: string; name: string }[];
   regions: { id: string; name: string }[];
+  hosts: { id: string; name: string }[];
 }
 
-export function IncidentsManager({ initialIncidents, total, limit, offset, servers, regions }: Props) {
+export function IncidentsManager({ initialIncidents, total, limit, offset, servers, regions, hosts }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -88,6 +89,7 @@ export function IncidentsManager({ initialIncidents, total, limit, offset, serve
                 incidents={initialIncidents}
                 servers={servers}
                 regions={regions}
+                hosts={hosts}
                 onIncidentUpdated={() => router.refresh()}
               />
               {hasMore && (
@@ -111,6 +113,7 @@ export function IncidentsManager({ initialIncidents, total, limit, offset, serve
         }}
         servers={servers}
         regions={regions}
+        hosts={hosts}
       />
     </div>
   );

@@ -14,11 +14,15 @@ interface ServerEvent {
   id: string;
   server_id: string;
   event_type: string;
+  event_source: string;
+  status: string | null;
+  message: string | null;
   old_status: ServerStatus | null;
   new_status: ServerStatus | null;
   response_time_ms: number | null;
   error_message: string | null;
   metadata: any;
+  payload: any;
   created_at: string;
   server: {
     name: string;
@@ -59,11 +63,12 @@ export default async function EventsPage() {
     redirect('/login');
   }
 
+  const isAdmin = user.role === 'admin';
   const events = await getRecentEvents();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <DashboardHeader user={user} />
+      <DashboardHeader user={user} isAdmin={isAdmin} />
 
       <main className="container mx-auto px-4 py-8">
         <Suspense fallback={<EventsSkeleton />}>
