@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     // Log event for each affected server
     if (allAffectedServers.length > 0) {
       const createdAt = new Date().toISOString();
-      const serverEvents = allAffectedServers.map(serverId => ({
+      const serverEvents = allAffectedServers.map((serverId: string) => ({
         server_id: serverId,
         event_type: 'status_change',
         event_source: 'manual',
