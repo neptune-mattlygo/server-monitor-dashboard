@@ -83,6 +83,9 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
     e.preventDefault();
     setDragOverHostId(hostId);
 
+    // Only auto-scroll if we're actually dragging something
+    if (!draggedServerId) return;
+
     // Auto-scroll when dragging near the edges
     const scrollThreshold = 100; // pixels from edge
     const scrollSpeed = 10; // pixels per interval
