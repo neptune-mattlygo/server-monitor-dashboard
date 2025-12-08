@@ -155,6 +155,7 @@ export async function GET() {
       config: {
         company_name: config?.company_name || 'Server Monitor',
         logo_url: config?.logo_url,
+        logo_dark_url: config?.logo_dark_url,
         primary_color: config?.primary_color || '#3b82f6',
         support_email: config?.support_email,
         support_url: config?.support_url,

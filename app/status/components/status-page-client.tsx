@@ -15,6 +15,7 @@ interface StatusData {
   config: {
     company_name: string;
     logo_url?: string;
+    logo_dark_url?: string;
     primary_color: string;
     support_email?: string;
     support_url?: string;
@@ -41,13 +42,25 @@ export function StatusPageClient() {
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [subscribeForm, setSubscribeForm] = useState({ name: '', email: '', company: '' });
   const [subscribeMessage, setSubscribeMessage] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     fetchStatus();
+    checkAuth();
     // Refresh every 30 seconds
     const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/check');
+      const result = await response.json();
+      setIsAuthenticated(result.authenticated || false);
+    } catch (error) {
+      setIsAuthenticated(false);
+    }
+  };
 
   const fetchStatus = async () => {
     try {
@@ -155,12 +168,36 @@ export function StatusPageClient() {
       <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="container mx-auto px-4 py-6 max-w-5xl">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-4">
+              {data.config.logo_url && (
+                <>
+                  <img
+                    src={data.config.logo_url}
+                    alt={data.config.company_name}
+                    className="h-10 w-auto object-contain dark:hidden"
+                  />
+                  <img
+                    src={data.config.logo_dark_url || data.config.logo_url}
+                    alt={data.config.company_name}
+                    className="h-10 w-auto object-contain hidden dark:block"
+                  />
+                </>
+              )}
+            </div>
+            <div className="flex-1 text-center">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{data.config.company_name}</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">System Status</p>
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
+              {isAuthenticated && (
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = '/dashboard'}
+                >
+                  Go to Dashboard
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => setShowSubscribe(!showSubscribe)}

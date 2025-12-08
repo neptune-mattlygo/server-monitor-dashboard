@@ -450,7 +450,12 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                         )}
                       </Button>
                       <div>
-                        <CardTitle>{host.name}</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                          {host.name}
+                          <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                            ({filteredHost.servers.length} {filteredHost.servers.length === 1 ? 'server' : 'servers'})
+                          </span>
+                        </CardTitle>
                         {host.regions?.name && (
                           <CardDescription>{host.regions.name}</CardDescription>
                         )}

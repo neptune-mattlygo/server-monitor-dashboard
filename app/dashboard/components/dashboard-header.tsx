@@ -26,7 +26,8 @@ import {
   AlertCircle,
   Users,
   MapPin,
-  Palette
+  Palette,
+  ExternalLink
 } from 'lucide-react';
 
 interface DashboardHeaderProps {
@@ -84,12 +85,6 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
                 Events
               </a>
             </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <a href="/status" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Status Page
-              </a>
-            </Button>
             {isAdmin && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -129,6 +124,14 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
               </DropdownMenu>
             )}
           </nav>
+          <Separator orientation="vertical" className="h-8" />
+          <Button variant="outline" size="sm" asChild>
+            <a href="/status" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Status Page
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </Button>
         </div>
 
         <div className="flex items-center gap-3">

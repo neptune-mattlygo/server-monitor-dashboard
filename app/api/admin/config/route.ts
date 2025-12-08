@@ -42,6 +42,7 @@ export async function PATCH(request: NextRequest) {
     const {
       company_name,
       logo_url,
+      logo_dark_url,
       primary_color,
       favicon_url,
       custom_domain,
@@ -54,6 +55,7 @@ export async function PATCH(request: NextRequest) {
     const updateData: any = {};
     if (company_name !== undefined) updateData.company_name = company_name;
     if (logo_url !== undefined) updateData.logo_url = logo_url;
+    if (logo_dark_url !== undefined) updateData.logo_dark_url = logo_dark_url;
     if (primary_color !== undefined) updateData.primary_color = primary_color;
     if (favicon_url !== undefined) updateData.favicon_url = favicon_url;
     if (custom_domain !== undefined) updateData.custom_domain = custom_domain;

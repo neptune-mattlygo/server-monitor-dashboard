@@ -42,6 +42,7 @@ export const getAuthUrl = () => {
   return client.getAuthCodeUrl({
     scopes: ['User.Read', 'email', 'profile', 'openid'],
     redirectUri: process.env.AZURE_AD_REDIRECT_URI!,
+    prompt: 'select_account', // Force account selection to bypass some conditional access policies
   });
 };
 

@@ -153,22 +153,37 @@ export async function upsertUserProfile(
   lastName: string | null,
   displayName: string | null
 ): Promise<Profile> {
-  // Check if user exists
-  const { data: existing } = await supabaseAdmin
+  // Check if user exists by azure_id
+  let { data: existing } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('azure_id', azureId)
     .single();
+
+  // If not found by azure_id, check by email (for accounts created with failed attempts)
+  if (!existing) {
+    const { data: existingByEmail } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('email', email)
+      .single();
+    
+    if (existingByEmail) {
+      existing = existingByEmail;
+    }
+  }
 
   if (existing) {
     // Update existing profile
     const { data: updated, error } = await supabaseAdmin
       .from('profiles')
       .update({
+        azure_id: azureId, // Ensure azure_id is set
         email,
         first_name: firstName,
         last_name: lastName,
         display_name: displayName,
+        auth_provider: 'azure',
       })
       .eq('id', existing.id)
       .select()
@@ -185,9 +200,14 @@ export async function upsertUserProfile(
 
   const role = count === 0 ? 'admin' : 'viewer';
 
+  // Generate UUID for the profile
+  const { data: uuidResult } = await supabaseAdmin.rpc('gen_random_uuid');
+  const profileId = uuidResult || crypto.randomUUID();
+
   const { data: profile, error } = await supabaseAdmin
     .from('profiles')
     .insert({
+      id: profileId,
       azure_id: azureId,
       email,
       first_name: firstName,

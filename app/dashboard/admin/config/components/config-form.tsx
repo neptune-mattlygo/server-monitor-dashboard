@@ -14,6 +14,7 @@ interface Config {
   id: string;
   company_name: string;
   logo_url: string | null;
+  logo_dark_url: string | null;
   primary_color: string;
   favicon_url: string | null;
   custom_domain: string | null;
@@ -34,6 +35,7 @@ export function ConfigForm({ initialConfig }: Props) {
   const [formData, setFormData] = useState({
     company_name: initialConfig?.company_name || 'Server Monitor',
     logo_url: initialConfig?.logo_url || '',
+    logo_dark_url: initialConfig?.logo_dark_url || '',
     primary_color: initialConfig?.primary_color || '#3b82f6',
     favicon_url: initialConfig?.favicon_url || '',
     custom_domain: initialConfig?.custom_domain || '',
@@ -93,7 +95,7 @@ export function ConfigForm({ initialConfig }: Props) {
             </div>
 
             <div>
-              <Label htmlFor="logo_url">Logo URL</Label>
+              <Label htmlFor="logo_url">Logo URL (Light Mode)</Label>
               <Input
                 id="logo_url"
                 value={formData.logo_url}
@@ -101,6 +103,20 @@ export function ConfigForm({ initialConfig }: Props) {
                 placeholder="https://example.com/logo.png"
                 type="url"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="logo_dark_url">Logo URL (Dark Mode)</Label>
+              <Input
+                id="logo_dark_url"
+                value={formData.logo_dark_url}
+                onChange={(e) => setFormData({ ...formData, logo_dark_url: e.target.value })}
+                placeholder="https://example.com/logo-dark.png"
+                type="url"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Optional - Falls back to light mode logo if not set
+              </p>
             </div>
 
             <div>
