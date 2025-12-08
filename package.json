@@ -91,5 +91,11 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "overrides": {
+    "glob": "^10.0.0",
+    "inflight": "npm:@aashutoshrathi/inflight@^1.0.0",
+    "domexception": "^4.0.0",
+    "abab": "^2.0.6"
   }
 }
