@@ -24,6 +24,7 @@ export interface FileMakerPayload {
 
 export interface BackupPayload {
   job_name: string;
+  server_name?: string; // Optional: server to associate event with
   status: 'success' | 'fail';
   duration: number; // seconds
   size?: string; // e.g., "1.5GB"

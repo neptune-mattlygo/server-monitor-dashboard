@@ -44,7 +44,7 @@ export function parseFileMakerWebhook(payload: FileMakerPayload): ParsedWebhookD
 // Parse Backup System webhook
 export function parseBackupWebhook(payload: BackupPayload): ParsedWebhookData {
   return {
-    serverName: payload.job_name,
+    serverName: payload.server_name || payload.job_name,
     eventType: 'backup',
     status: payload.status,
     message: payload.status === 'success'

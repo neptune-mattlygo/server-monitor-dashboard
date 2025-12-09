@@ -99,11 +99,11 @@ curl -X POST http://localhost:3000/api/webhooks/filemaker \
   -H "X-Webhook-Secret: dMQyVLS1iJbShBRwpScdJSs0rkDd1Wne78jsJ/b3Vbc=" \
   -d '{"event":"backup","server":"FM Server","status":"success","severity":"info","timestamp":"2024-12-01T10:00:00Z","details":"OK"}'
 
-# Backup
+# Backup (server_name should match a server in your database)
 curl -X POST http://localhost:3000/api/webhooks/backup \
   -H "Content-Type: application/json" \
   -H "X-Webhook-Secret: kbWcVfbHgdzL4lO5oBeJ/4h5YZNw/+/FQbbZerQjgbI=" \
-  -d '{"job_name":"Daily Backup","status":"success","duration":300,"size":"1.5GB","timestamp":"2024-12-01T10:00:00Z"}'
+  -d '{"job_name":"Daily Backup","server_name":"Backup Server","status":"success","duration":300,"size":"1.5GB","timestamp":"2024-12-01T10:00:00Z"}'
 
 # AWS S3
 curl -X POST http://localhost:3000/api/webhooks/aws-s3 \
@@ -183,6 +183,11 @@ npx shadcn-ui@latest add tabs
 - Check header name: `X-Webhook-Secret`
 - Use exact secrets from `.env.local` file
 - Review server logs
+
+### Backup webhook "Server not found" error
+- Add `server_name` field to payload matching an existing server
+- Or create a server with name matching the `server_name` value
+- Example: `{"job_name":"Daily Backup","server_name":"Backup Server",...}`
 
 ### TypeScript errors
 - Run `npm install`
