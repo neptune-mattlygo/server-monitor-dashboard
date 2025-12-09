@@ -443,6 +443,11 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
               })
             };
 
+            // Skip rendering hosts with no matching servers
+            if (filteredHost.servers.length === 0) {
+              return null;
+            }
+
             const isDragOver = dragOverHostId === host.id;
             const isCollapsed = collapsedHosts.has(host.id);
 
