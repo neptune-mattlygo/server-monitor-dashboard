@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HostServerTable } from './host-server-table';
@@ -10,7 +11,7 @@ import { AllServersTable } from './all-servers-table';
 import { AddServerDialog } from './add-server-dialog';
 import { AddHostDialog } from './add-host-dialog';
 import { EditHostDialog } from './edit-host-dialog';
-import { Server, Plus, Database, Pencil, LayoutGrid, List, ChevronDown, ChevronRight } from 'lucide-react';
+import { Server, Plus, Database, Pencil, LayoutGrid, List, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -51,6 +52,7 @@ interface DashboardClientProps {
 export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<ServerStatus | 'all'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grouped' | 'all'>('grouped');
   const [addServerDialogOpen, setAddServerDialogOpen] = useState(false);
   const [addHostDialogOpen, setAddHostDialogOpen] = useState(false);
@@ -338,7 +340,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
 
       {/* View Toggle and Action Buttons */}
       <TooltipProvider>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 gap-4">
           <div className="flex gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -369,6 +371,19 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                 <p>All servers list</p>
               </TooltipContent>
             </Tooltip>
+          </div>
+          
+          <div className="flex-1 max-w-sm">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search servers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
           
           <div className="flex gap-3">
@@ -418,9 +433,14 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
           {hosts.map((host) => {
             const filteredHost = {
               ...host,
-              servers: statusFilter === 'all' 
-                ? host.servers 
-                : host.servers.filter(s => s.current_status === statusFilter)
+              servers: host.servers.filter(s => {
+                const matchesStatus = statusFilter === 'all' || s.current_status === statusFilter;
+                const matchesSearch = !searchTerm || 
+                  s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  s.server_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  s.ip_address?.toLowerCase().includes(searchTerm.toLowerCase());
+                return matchesStatus && matchesSearch;
+              })
             };
 
             const isDragOver = dragOverHostId === host.id;
@@ -543,7 +563,15 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                 ...s,
                 host_name: h.name,
                 host_region: h.regions?.name || null
-              })))}
+              }))).filter(s => {
+                const matchesStatus = statusFilter === 'all' || s.current_status === statusFilter;
+                const matchesSearch = !searchTerm || 
+                  s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  s.server_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  s.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  s.host_name?.toLowerCase().includes(searchTerm.toLowerCase());
+                return matchesStatus && matchesSearch;
+              })}
               statusFilter={statusFilter}
               hosts={hosts}
             />
