@@ -51,6 +51,14 @@ export async function GET(
       .order('created_at', { ascending: false })
       .limit(10);
 
+    const { data: s3Events } = await supabaseAdmin
+      .from('server_events')
+      .select('*')
+      .eq('server_id', serverId)
+      .eq('event_source', 'aws_s3')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
     // Calculate uptime (time since last 'down' event)
     const lastDownEvent = statusEvents?.find(e => 
       e.new_status === 'down' || 
@@ -83,6 +91,9 @@ export async function GET(
     // Get most recent FileMaker event
     const lastFilemakerEvent = filemakerEvents?.[0] || null;
 
+    // Get most recent S3 event
+    const lastS3Event = s3Events?.[0] || null;
+
     return NextResponse.json({
       server: {
         id: server.id,
@@ -99,9 +110,11 @@ export async function GET(
         status: statusEvents?.slice(0, 20) || [],
         backups: backupEvents || [],
         filemaker: filemakerEvents || [],
+        s3: s3Events || [],
       },
       lastBackup,
       lastFilemakerEvent,
+      lastS3Event,
     });
   } catch (error) {
     console.error('Error fetching server summary:', error);

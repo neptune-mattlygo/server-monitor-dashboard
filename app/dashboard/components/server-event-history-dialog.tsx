@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, Database, Server, TrendingUp, TrendingDown } from 'lucide-react';
+import { Clock, Database, Server, TrendingUp, TrendingDown, Cloud } from 'lucide-react';
 
 interface EventData {
   id: string;
@@ -24,6 +24,9 @@ interface EventData {
   old_status?: string;
   new_status?: string;
   payload?: any;
+  backup_event_type?: string;
+  backup_database?: string;
+  backup_file_key?: string;
 }
 
 interface ServerEventHistoryDialogProps {
@@ -100,10 +103,14 @@ export function ServerEventHistoryDialog({
           </div>
         ) : data ? (
           <Tabs defaultValue="status" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="status">
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Status History
+              </TabsTrigger>
+              <TabsTrigger value="s3">
+                <Cloud className="h-4 w-4 mr-2" />
+                S3 Events
               </TabsTrigger>
               <TabsTrigger value="backups">
                 <Database className="h-4 w-4 mr-2" />
@@ -190,6 +197,82 @@ export function ServerEventHistoryDialog({
                 ) : (
                   <p className="text-center text-gray-500 py-8">
                     No status change events recorded
+                  </p>
+                )}
+              </TabsContent>
+
+              {/* S3 Events Tab */}
+              <TabsContent value="s3" className="space-y-4">
+                {data.lastS3Event && (
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Cloud className="h-5 w-5 text-orange-600" />
+                      <h3 className="font-semibold text-orange-900 dark:text-orange-100">
+                        Latest S3 Event
+                      </h3>
+                    </div>
+                    <p className="text-lg font-semibold text-orange-700 dark:text-orange-300">
+                      {formatDateTime(data.lastS3Event.created_at)}
+                    </p>
+                    {data.lastS3Event.backup_event_type && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {data.lastS3Event.backup_event_type}
+                      </p>
+                    )}
+                    {data.lastS3Event.backup_database && (
+                      <p className="text-sm font-mono text-gray-600 dark:text-gray-400">
+                        {data.lastS3Event.backup_database}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {data.events.s3 && data.events.s3.length > 0 ? (
+                  <div className="space-y-3">
+                    {data.events.s3.map((event: EventData) => (
+                      <div
+                        key={event.id}
+                        className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Cloud className="h-4 w-4 text-orange-500" />
+                              <Badge variant="outline">
+                                {event.backup_event_type || event.event_type}
+                              </Badge>
+                              {event.status && (
+                                <Badge variant="secondary">
+                                  {event.status}
+                                </Badge>
+                              )}
+                            </div>
+                            {event.backup_database && (
+                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                📁 {event.backup_database}
+                              </p>
+                            )}
+                            {event.backup_file_key && (
+                              <p className="text-xs font-mono text-gray-500 dark:text-gray-500 mb-2 break-all">
+                                {event.backup_file_key}
+                              </p>
+                            )}
+                            {event.message && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {event.message}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500 ml-4 text-right">
+                            {formatDateTime(event.created_at)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 py-8">
+                    No S3 events recorded
                   </p>
                 )}
               </TabsContent>
