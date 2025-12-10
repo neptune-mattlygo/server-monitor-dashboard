@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
 import { isAdmin } from '@/lib/auth/permissions';
+import { performBackupCheck } from '@/lib/backup-monitoring/check';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST - Run a test backup monitoring check (manual trigger)
- * Reuses the same logic as the cron job but bypasses the cron secret check
+ * Directly calls the backup check logic, bypassing the cron endpoint
  */
 export async function POST(request: NextRequest) {
   try {
@@ -15,46 +16,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Make internal request to the cron endpoint with the secret
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const cronUrl = `${baseUrl}/api/cron/backup-check`;
-    const authHeader = `Bearer ${process.env.CRON_SECRET}`;
+    console.log('Test endpoint: Running backup check...');
     
-    console.log('Test endpoint calling:', cronUrl);
-    console.log('CRON_SECRET available:', !!process.env.CRON_SECRET);
-    console.log('Auth header (first 20 chars):', authHeader.substring(0, 20));
-    console.log('Auth header length:', authHeader.length);
+    const result = await performBackupCheck();
     
-    const cronResponse = await fetch(cronUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': authHeader,
-      },
-    });
-
-    console.log('Cron response status:', cronResponse.status);
-    
-    const result = await cronResponse.json();
-    console.log('Cron response body:', result);
-
-    if (!cronResponse.ok) {
-      console.error('Test run failed with status:', cronResponse.status, result);
-      
-      // Provide more helpful error message for 401
-      let errorDetails = result;
-      if (cronResponse.status === 401) {
-        errorDetails = {
-          ...result,
-          hint: 'The CRON_SECRET environment variable may not be set correctly in production. Please verify it matches in Vercel settings.'
-        };
-      }
-      
-      return NextResponse.json({ 
-        error: 'Test run failed',
-        details: errorDetails,
-        status_code: cronResponse.status
-      }, { status: cronResponse.status });
-    }
+    console.log('Test endpoint: Check completed', result);
 
     return NextResponse.json(result);
   } catch (error: any) {
