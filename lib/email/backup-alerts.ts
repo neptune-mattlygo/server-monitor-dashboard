@@ -28,6 +28,9 @@ export interface OverdueServer {
   last_backup_at: string | null;
   last_backup_database: string | null;
   hours_since_backup: number | null;
+  file_size: number | null;
+  file_size_mb: number | null;
+  is_small_file: boolean;
 }
 
 /**
@@ -78,6 +81,14 @@ export async function sendBackupAlertEmail(
   }
 }
 
+function formatFileSize(bytes: number | null): string {
+  if (bytes === null) return '-';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 function generateBackupAlertHTML(
   servers: OverdueServer[],
   thresholdHours: number,
@@ -104,6 +115,10 @@ function generateBackupAlertHTML(
       : server.hours_since_backup > thresholdHours * 2
       ? 'status-critical'
       : 'status-warning';
+    
+    const fileSizeDisplay = formatFileSize(server.file_size);
+    const fileSizeClass = server.is_small_file ? 'status-warning' : '';
+    const fileSizeWarning = server.is_small_file ? ' ⚠️' : '';
 
     return `
       <tr class="server-row">
@@ -118,6 +133,9 @@ function generateBackupAlertHTML(
         <td class="server-time ${statusClass}">
           <strong>${hoursSince}</strong>
           <div class="last-backup-date">${lastBackup}</div>
+        </td>
+        <td class="server-size ${fileSizeClass}">
+          <strong>${fileSizeDisplay}${fileSizeWarning}</strong>
         </td>
       </tr>
     `;
@@ -274,6 +292,7 @@ function generateBackupAlertHTML(
                 <th>Server</th>
                 <th>Last Database</th>
                 <th style="text-align: right;">Time Since Backup</th>
+                <th style="text-align: right;">File Size</th>
               </tr>
             </thead>
             <tbody>

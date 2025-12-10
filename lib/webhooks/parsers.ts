@@ -78,10 +78,27 @@ export function parseAWSS3Webhook(payload: AWSS3Payload): ParsedWebhookData {
     const eventName = record.eventName;
     const configurationId = record.s3.configurationId;
     const bucketName = record.s3.bucket.name;
+    const fileSize = record.s3.object.size;
     
     // Extract database name from object key (filename only)
     // e.g., "dbs/Daily_2025-12-10_1731/Databases/ESPrinting.fmp12" -> "ESPrinting.fmp12"
     const filename = objectKey.split('/').pop() || objectKey;
+    
+    // Only process .fmp12 files for backup monitoring
+    if (!filename.toLowerCase().endsWith('.fmp12')) {
+      return {
+        serverName: bucketName,
+        eventType: 's3_other',
+        status: 'info',
+        message: `Skipped non-FileMaker file: ${filename}`,
+        metadata: {
+          bucket: bucketName,
+          objectKey,
+          filename,
+          skipped: true,
+        },
+      };
+    }
     
     // Convert configurationId from snake_case to space-separated
     // e.g., "backup_added" -> "backup added"
@@ -102,11 +119,12 @@ export function parseAWSS3Webhook(payload: AWSS3Payload): ParsedWebhookData {
         objectKey,
         eventName,
         configurationId,
-        fileSize: record.s3.object.size,
+        fileSize,
       },
       backupEventType,
       backupDatabase: filename,
       backupFileKey: objectKey,
+      backupFileSize: fileSize,
     };
   }
   

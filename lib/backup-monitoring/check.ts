@@ -27,12 +27,17 @@ interface BackupEvent {
   created_at: string;
   backup_database: string | null;
   backup_event_type: string | null;
+  backup_file_size: number | null;
+  backup_file_size_alert_suppressed: boolean | null;
 }
 
 interface OverdueServer extends Server {
   last_backup_at: string | null;
   last_backup_database: string | null;
   hours_since_backup: number | null;
+  file_size: number | null;
+  file_size_mb: number | null;
+  is_small_file: boolean;
 }
 
 /**
@@ -106,11 +111,12 @@ export async function performBackupCheck() {
     };
   }
 
-  // Get latest backup event for each server
+  // Get latest backup event for each server (only .fmp12 files)
   const { data: backupEvents, error: backupEventsError } = await supabaseAdmin
     .from('server_events')
-    .select('server_id, created_at, backup_database, backup_event_type')
+    .select('server_id, created_at, backup_database, backup_event_type, backup_file_size, backup_file_size_alert_suppressed')
     .eq('event_type', 'backup')
+    .ilike('backup_database', '%.fmp12')
     .order('created_at', { ascending: false });
 
   if (backupEventsError) {
@@ -133,6 +139,10 @@ export async function performBackupCheck() {
   const thresholdDate = new Date(Date.now() - thresholdMs);
   const overdueServers: OverdueServer[] = [];
 
+  // Also track small files that need alerts
+  const smallFileServers: OverdueServer[] = [];
+  const SMALL_FILE_THRESHOLD = 1 * 1024 * 1024; // 1MB in bytes
+
   for (const server of servers) {
     const latestBackup = latestBackupMap.get(server.id);
     
@@ -140,6 +150,10 @@ export async function performBackupCheck() {
       const hoursSince = latestBackup 
         ? Math.floor((Date.now() - new Date(latestBackup.created_at).getTime()) / (1000 * 60 * 60))
         : null;
+      
+      const fileSize = latestBackup?.backup_file_size || null;
+      const fileSizeMB = fileSize ? fileSize / (1024 * 1024) : null;
+      const isSmallFile = fileSize ? fileSize < SMALL_FILE_THRESHOLD : false;
 
       overdueServers.push({
         id: server.id,
@@ -150,6 +164,28 @@ export async function performBackupCheck() {
         last_backup_at: latestBackup?.created_at || null,
         last_backup_database: latestBackup?.backup_database || null,
         hours_since_backup: hoursSince,
+        file_size: fileSize,
+        file_size_mb: fileSizeMB,
+        is_small_file: isSmallFile,
+      });
+    } else if (latestBackup.backup_file_size && 
+               latestBackup.backup_file_size < SMALL_FILE_THRESHOLD && 
+               !latestBackup.backup_file_size_alert_suppressed) {
+      // File is up to date but suspiciously small and alerts not suppressed
+      const fileSizeMB = latestBackup.backup_file_size / (1024 * 1024);
+      
+      smallFileServers.push({
+        id: server.id,
+        name: server.name,
+        ip_address: server.ip_address,
+        host_id: server.host_id,
+        host: Array.isArray(server.host) ? server.host[0] : server.host,
+        last_backup_at: latestBackup.created_at,
+        last_backup_database: latestBackup.backup_database,
+        hours_since_backup: 0,
+        file_size: latestBackup.backup_file_size,
+        file_size_mb: fileSizeMB,
+        is_small_file: true,
       });
     }
   }
@@ -166,19 +202,22 @@ export async function performBackupCheck() {
     notification_error: null,
   };
 
-  // Send email if there are overdue servers
+  // Combine overdue servers and small file servers for email alerts
+  const serversNeedingAlert = [...overdueServers, ...smallFileServers];
+  
+  // Send email if there are servers needing alerts
   let notificationSent = false;
   let notificationError = null;
 
-  if (overdueServers.length > 0) {
+  if (serversNeedingAlert.length > 0) {
     try {
       await sendBackupAlertEmail(
         config.email_recipients,
-        overdueServers,
+        serversNeedingAlert,
         config.threshold_hours
       );
       notificationSent = true;
-      console.log(`Backup alert email sent to ${config.email_recipients.length} recipients`);
+      console.log(`Backup alert email sent to ${config.email_recipients.length} recipients (${overdueServers.length} overdue, ${smallFileServers.length} small files)`);
     } catch (emailError: any) {
       notificationError = emailError.message || 'Failed to send email';
       console.error('Failed to send backup alert email:', emailError);
@@ -204,23 +243,33 @@ export async function performBackupCheck() {
     .update({ last_check_at: new Date().toISOString() })
     .eq('id', config.id);
 
+  const message = [];
+  if (overdueServers.length > 0) {
+    message.push(`${overdueServers.length} overdue backup(s)`);
+  }
+  if (smallFileServers.length > 0) {
+    message.push(`${smallFileServers.length} small file(s) detected`);
+  }
+  
   return {
     success: true,
-    message: overdueServers.length > 0 
-      ? `Found ${overdueServers.length} server(s) with overdue backups`
-      : 'All servers have recent backups',
+    message: message.length > 0 ? `Found: ${message.join(', ')}` : 'All servers have recent backups',
     data: {
       servers_checked: servers.length,
       servers_overdue: overdueServers.length,
+      servers_with_small_files: smallFileServers.length,
       threshold_hours: config.threshold_hours,
       notification_sent: notificationSent,
       notification_error: notificationError,
-      overdue_servers: overdueServers.map(s => ({
+      overdue_servers: serversNeedingAlert.map(s => ({
         id: s.id,
         name: s.name,
         host: s.host?.name,
         last_backup_at: s.last_backup_at,
+        last_backup_database: s.last_backup_database,
         hours_since_backup: s.hours_since_backup,
+        file_size_mb: s.file_size_mb,
+        is_small_file: s.is_small_file,
       })),
     },
   };

@@ -59,11 +59,12 @@ export interface AWSS3Payload {
 
 export interface ParsedWebhookData {
   serverName: string;
-  eventType: 'status_change' | 'backup' | 's3_restore' | 'filemaker_event' | 'sns_test' | 'backup_added';
+  eventType: 'status_change' | 'backup' | 's3_restore' | 'filemaker_event' | 'sns_test' | 'backup_added' | 's3_other';
   status: string;
   message: string;
   metadata?: Record<string, any>;
   backupEventType?: string;
   backupDatabase?: string;
   backupFileKey?: string;
+  backupFileSize?: number;
 }
