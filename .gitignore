@@ -39,6 +39,7 @@ next-env.d.ts
 .temp
 supabase/.temp
 supabase/.branches
+supabase/seed.sql
 
 # IDE
 .vscode/*
