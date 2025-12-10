@@ -105,10 +105,9 @@ curl -X POST http://localhost:3000/api/webhooks/backup \
   -H "X-Webhook-Secret: kbWcVfbHgdzL4lO5oBeJ/4h5YZNw/+/FQbbZerQjgbI=" \
   -d '{"job_name":"Daily Backup","server_name":"Backup Server","status":"success","duration":300,"size":"1.5GB","timestamp":"2024-12-01T10:00:00Z"}'
 
-# AWS S3
-curl -X POST http://localhost:3000/api/webhooks/aws-s3 \
+# AWS S3 (token in URL instead of header - SNS compatible)
+curl -X POST "http://localhost:3000/api/webhooks/aws-s3?token=hWdh7o6LNUPUR29cX2vwLKMUb8pDN4mveN1krMzYw/4=" \
   -H "Content-Type: application/json" \
-  -H "X-Webhook-Secret: hWdh7o6LNUPUR29cX2vwLKMUb8pDN4mveN1krMzYw/4=" \
   -d '{"operation":"restore","status":"started","object_key":"backup.tar.gz","bucket":"my-bucket"}'
 ```
 

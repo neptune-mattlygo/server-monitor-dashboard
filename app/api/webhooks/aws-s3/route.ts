@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { parseAWSS3Webhook } from '@/lib/webhooks/parsers';
-import { validateAWSS3Webhook, isRateLimited } from '@/lib/webhooks/validators';
+import { isRateLimited } from '@/lib/webhooks/validators';
 import type { AWSS3Payload } from '@/lib/webhooks/types';
 
 export async function POST(request: NextRequest) {
@@ -12,10 +12,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
-    // Validate webhook signature
-    const signature = request.headers.get('x-amz-sns-message-signature') || 
-                     request.headers.get('x-webhook-secret');
-    const expectedSecret = process.env.WEBHOOK_SECRET_AWS_S3;
+    // Validate URL token parameter for security (instead of headers which SNS doesn't support)
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get('token');
+    const expectedToken = process.env.WEBHOOK_SECRET_AWS_S3;
+    
+    if (!expectedToken || token !== expectedToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     
     const rawBody = await request.text();
     let payload: AWSS3Payload;
@@ -24,10 +28,6 @@ export async function POST(request: NextRequest) {
       payload = JSON.parse(rawBody);
     } catch (error) {
       return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
-    }
-
-    if (!expectedSecret || !validateAWSS3Webhook(payload, signature, expectedSecret)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse webhook payload
