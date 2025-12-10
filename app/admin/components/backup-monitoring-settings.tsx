@@ -120,7 +120,10 @@ export function BackupMonitoringSettings() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Test run failed');
+        const errorMsg = error.details 
+          ? `${error.error}: ${error.details}` 
+          : error.error || 'Test run failed';
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
