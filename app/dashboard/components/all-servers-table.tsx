@@ -286,14 +286,11 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <div className="cursor-pointer">
-                        <div className="flex items-center gap-1">
-                          {server.last_backup.backup_event_type && (
-                            <Badge variant="outline" className="text-xs">
-                              {server.last_backup.backup_event_type}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className={`text-sm ${
+                          new Date().getTime() - new Date(server.last_backup.created_at).getTime() > 24 * 60 * 60 * 1000
+                            ? 'text-red-600 font-semibold'
+                            : ''
+                        }`}>
                           <RelativeTime dateString={server.last_backup.created_at} />
                         </div>
                       </div>
