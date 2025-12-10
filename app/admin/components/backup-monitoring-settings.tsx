@@ -286,24 +286,6 @@ export function BackupMonitoringSettings() {
             )}
           </div>
 
-          {/* Schedule Info */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-gray-600 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-medium text-sm">Check Schedule</p>
-                <p className="text-sm text-gray-600">
-                  {config?.check_schedule || 'Daily at 9:00 AM'}
-                </p>
-                {config?.last_check_at && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Last check: {new Date(config.last_check_at).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t">
             <Button
