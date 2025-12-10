@@ -124,9 +124,23 @@ export function BackupMonitoringSettings() {
       }
 
       const data = await response.json();
+      
+      // Build detailed message including email status
+      let messageText = `Test completed: ${data.data.servers_checked} servers checked, ${data.data.servers_overdue} overdue`;
+      
+      if (data.data.servers_overdue > 0) {
+        if (data.data.notification_sent) {
+          messageText += ` • Email sent to ${emailList.length} recipient(s)`;
+        } else if (data.data.notification_error) {
+          messageText += ` • Email failed: ${data.data.notification_error}`;
+        } else {
+          messageText += ` • No email sent (check configuration)`;
+        }
+      }
+      
       setMessage({ 
-        type: 'success', 
-        text: `Test completed: ${data.data.servers_checked} servers checked, ${data.data.servers_overdue} overdue` 
+        type: data.data.notification_error ? 'error' : 'success', 
+        text: messageText
       });
       fetchRecentResults();
     } catch (error: any) {
