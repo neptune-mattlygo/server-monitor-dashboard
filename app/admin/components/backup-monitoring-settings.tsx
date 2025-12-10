@@ -324,6 +324,22 @@ export function BackupMonitoringSettings() {
         </div>
       </Card>
 
+      {/* Schedule Information */}
+      <Alert>
+        <Clock className="h-4 w-4" />
+        <AlertDescription>
+          <div className="space-y-2">
+            <p className="font-medium">Automated Check Schedule</p>
+            <p className="text-sm">
+              Backup checks run automatically at <strong>6:00 AM UTC</strong> daily.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              To change the schedule, update the cron expression in <code className="bg-muted px-1 py-0.5 rounded text-xs">vercel.json</code> (currently: <code className="bg-muted px-1 py-0.5 rounded text-xs">0 6 * * *</code>) and redeploy the application.
+            </p>
+          </div>
+        </AlertDescription>
+      </Alert>
+
       {/* Recent Results */}
       {recentResults.length > 0 && (
         <Card className="p-6">

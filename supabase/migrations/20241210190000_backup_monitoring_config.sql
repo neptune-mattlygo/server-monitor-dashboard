@@ -22,7 +22,7 @@ COMMENT ON COLUMN backup_monitoring_config.last_check_at IS 'Timestamp of last m
 
 -- Insert default configuration (single row)
 INSERT INTO backup_monitoring_config (is_enabled, threshold_hours, email_recipients, check_schedule)
-VALUES (false, 24, '{}', '0 9 * * *')
+VALUES (false, 24, '{}', '0 6 * * *')
 ON CONFLICT DO NOTHING;
 
 -- Backup monitoring results/history table
