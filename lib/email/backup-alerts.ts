@@ -24,7 +24,7 @@ export interface OverdueServer {
   ip_address: string | null;
   host?: {
     name: string;
-  };
+  } | null;
   last_backup_at: string | null;
   last_backup_database: string | null;
   hours_since_backup: number | null;
