@@ -18,14 +18,17 @@ export async function POST(request: NextRequest) {
     // Make internal request to the cron endpoint with the secret
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const cronUrl = `${baseUrl}/api/cron/backup-check`;
+    const authHeader = `Bearer ${process.env.CRON_SECRET}`;
     
     console.log('Test endpoint calling:', cronUrl);
     console.log('CRON_SECRET available:', !!process.env.CRON_SECRET);
+    console.log('Auth header (first 20 chars):', authHeader.substring(0, 20));
+    console.log('Auth header length:', authHeader.length);
     
     const cronResponse = await fetch(cronUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+        'Authorization': authHeader,
       },
     });
 

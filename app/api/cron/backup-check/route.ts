@@ -49,11 +49,21 @@ export async function GET(request: NextRequest) {
     const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
     
     console.log('Cron endpoint - Auth header present:', !!authHeader);
+    console.log('Cron endpoint - Auth header value (first 20 chars):', authHeader?.substring(0, 20));
     console.log('Cron endpoint - CRON_SECRET available:', !!process.env.CRON_SECRET);
+    console.log('Cron endpoint - Expected auth (first 20 chars):', expectedAuth?.substring(0, 20));
     console.log('Cron endpoint - Auth match:', authHeader === expectedAuth);
     
     if (authHeader !== expectedAuth) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        debug: process.env.NODE_ENV === 'development' ? {
+          hasAuthHeader: !!authHeader,
+          hasSecret: !!process.env.CRON_SECRET,
+          authHeaderLength: authHeader?.length,
+          expectedAuthLength: expectedAuth?.length
+        } : undefined
+      }, { status: 401 });
     }
 
     // Get backup monitoring configuration
