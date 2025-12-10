@@ -93,7 +93,7 @@ async function getDashboardData() {
     // Get last backup events (including backup_added from S3)
     const { data: lastBackupEvents } = await supabaseAdmin
       .from('server_events')
-      .select('server_id, created_at, message, status, backup_event_type, backup_database, backup_file_key')
+      .select('server_id, created_at, message, status, backup_event_type, backup_database, backup_file_key, backup_file_size')
       .in('server_id', serverIds)
       .or('event_type.eq.backup,event_type.eq.backup_added')
       .order('created_at', { ascending: false });

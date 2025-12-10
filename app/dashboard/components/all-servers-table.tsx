@@ -318,6 +318,23 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                             <span className="font-mono text-xs break-all">{server.last_backup.backup_file_key}</span>
                           </div>
                         )}
+                        {server.last_backup.backup_file_size && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">Size:</span>{' '}
+                            <span className="font-medium">
+                              {server.last_backup.backup_file_size < 1024 
+                                ? `${server.last_backup.backup_file_size} B`
+                                : server.last_backup.backup_file_size < 1024 * 1024
+                                ? `${(server.last_backup.backup_file_size / 1024).toFixed(2)} KB`
+                                : server.last_backup.backup_file_size < 1024 * 1024 * 1024
+                                ? `${(server.last_backup.backup_file_size / (1024 * 1024)).toFixed(2)} MB`
+                                : `${(server.last_backup.backup_file_size / (1024 * 1024 * 1024)).toFixed(2)} GB`}
+                              {server.last_backup.backup_file_size < 1024 * 1024 && (
+                                <span className="text-yellow-600 ml-1">⚠️</span>
+                              )}
+                            </span>
+                          </div>
+                        )}
                         <div className="text-sm">
                           <span className="text-gray-500">Time:</span>{' '}
                           <RelativeTime dateString={server.last_backup.created_at} />
