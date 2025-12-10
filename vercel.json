@@ -3,6 +3,10 @@
     {
       "path": "/api/polling/uptimerobot",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/backup-check",
+      "schedule": "0 9 * * *"
     }
   ]
 }

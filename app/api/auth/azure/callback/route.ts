@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     const session = await createSession(
       profile.id,
       tokenResponse.accessToken,
-      '', // Azure MSAL doesn't provide refresh tokens in this flow
+      tokenResponse.refreshToken || '', // Store refresh token for persistent login
       expiresAt
     );
 

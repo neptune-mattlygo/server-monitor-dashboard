@@ -27,7 +27,8 @@ import {
   Users,
   MapPin,
   Palette,
-  ExternalLink
+  ExternalLink,
+  Bell
 } from 'lucide-react';
 
 interface DashboardHeaderProps {
@@ -118,6 +119,14 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
                     <a href="/dashboard/admin/config" className="cursor-pointer">
                       <Palette className="mr-2 h-4 w-4" />
                       <span>Configuration</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Monitoring</DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <a href="/dashboard/admin/backup-monitoring" className="cursor-pointer">
+                      <Bell className="mr-2 h-4 w-4" />
+                      <span>Backup Monitoring</span>
                     </a>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

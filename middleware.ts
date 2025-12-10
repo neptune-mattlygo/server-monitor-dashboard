@@ -24,6 +24,7 @@ export async function middleware(request: NextRequest) {
     '/api/webhooks/backup',
     '/api/webhooks/aws-s3',
     '/api/polling/uptimerobot', // UptimeRobot polling endpoint (cron job)
+    '/api/cron/backup-check', // Backup monitoring cron endpoint
   ];
 
   // Allow public and webhook routes without authentication

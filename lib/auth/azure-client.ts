@@ -40,7 +40,7 @@ const getMsalClient = () => {
 export const getAuthUrl = () => {
   const client = getMsalClient();
   return client.getAuthCodeUrl({
-    scopes: ['User.Read', 'email', 'profile', 'openid'],
+    scopes: ['User.Read', 'email', 'profile', 'openid', 'offline_access'],
     redirectUri: process.env.AZURE_AD_REDIRECT_URI!,
     prompt: 'select_account', // Force account selection to bypass some conditional access policies
   });
@@ -51,7 +51,7 @@ export const acquireTokenByCode = async (code: string) => {
   const client = getMsalClient();
   return await client.acquireTokenByCode({
     code,
-    scopes: ['User.Read', 'email', 'profile', 'openid'],
+    scopes: ['User.Read', 'email', 'profile', 'openid', 'offline_access'],
     redirectUri: process.env.AZURE_AD_REDIRECT_URI!,
   });
 };
