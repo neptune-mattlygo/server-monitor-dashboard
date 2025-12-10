@@ -87,10 +87,12 @@ export async function GET(request: NextRequest) {
       : new Date(Date.now() + 3600 * 1000);
 
     // Create session
+    // Note: MSAL doesn't expose refresh tokens directly for security
+    // We'll rely on session extension in getCurrentUser instead
     const session = await createSession(
       profile.id,
       tokenResponse.accessToken,
-      tokenResponse.refreshToken || '', // Store refresh token for persistent login
+      '', // Refresh tokens are managed internally by MSAL
       expiresAt
     );
 
