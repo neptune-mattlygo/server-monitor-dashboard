@@ -36,9 +36,20 @@ export async function POST(request: NextRequest) {
 
     if (!cronResponse.ok) {
       console.error('Test run failed with status:', cronResponse.status, result);
+      
+      // Provide more helpful error message for 401
+      let errorDetails = result;
+      if (cronResponse.status === 401) {
+        errorDetails = {
+          ...result,
+          hint: 'The CRON_SECRET environment variable may not be set correctly in production. Please verify it matches in Vercel settings.'
+        };
+      }
+      
       return NextResponse.json({ 
         error: 'Test run failed',
-        details: result 
+        details: errorDetails,
+        status_code: cronResponse.status
       }, { status: cronResponse.status });
     }
 
