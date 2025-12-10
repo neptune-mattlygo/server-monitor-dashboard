@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
     console.error('Test backup monitoring check error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, { status: 500 });
   }
 }
