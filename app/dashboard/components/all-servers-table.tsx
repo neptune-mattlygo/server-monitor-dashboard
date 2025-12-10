@@ -43,6 +43,7 @@ interface Server {
     backup_event_type?: string;
     backup_database?: string;
     backup_file_key?: string;
+    backup_file_size?: number;
   } | null;
   last_filemaker_event?: {
     created_at: string;
