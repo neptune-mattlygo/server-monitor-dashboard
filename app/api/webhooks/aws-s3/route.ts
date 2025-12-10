@@ -34,6 +34,24 @@ export async function POST(request: NextRequest) {
     const parsedData = parseAWSS3Webhook(payload);
     const bucketName = parsedData.metadata?.bucket || parsedData.serverName;
 
+    // Handle test/subscription confirmation notifications without valid bucket
+    // These will be logged to server_events without a server_id for review
+    if (!bucketName || bucketName === 'unknown' || bucketName === 'test-bucket') {
+      await supabaseAdmin.from('server_events').insert({
+        server_id: null,
+        event_type: 'sns_test',
+        event_source: 'aws_s3',
+        status: 'info',
+        message: 'SNS subscription confirmation or test notification received',
+        payload: payload as any,
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Test notification logged for review' 
+      });
+    }
+
     // Find server by bucket field
     const { data: server } = await supabaseAdmin
       .from('servers')
