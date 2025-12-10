@@ -27,6 +27,7 @@ interface EventData {
   backup_event_type?: string;
   backup_database?: string;
   backup_file_key?: string;
+  backup_file_size?: number;
 }
 
 interface ServerEventHistoryDialogProps {
@@ -220,6 +221,23 @@ export function ServerEventHistoryDialog({
                         {data.lastS3Event.backup_database}
                       </p>
                     )}
+                    {data.lastS3Event.backup_file_size && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Size:{' '}
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {data.lastS3Event.backup_file_size < 1024 
+                            ? `${data.lastS3Event.backup_file_size} B`
+                            : data.lastS3Event.backup_file_size < 1024 * 1024
+                            ? `${(data.lastS3Event.backup_file_size / 1024).toFixed(2)} KB`
+                            : data.lastS3Event.backup_file_size < 1024 * 1024 * 1024
+                            ? `${(data.lastS3Event.backup_file_size / (1024 * 1024)).toFixed(2)} MB`
+                            : `${(data.lastS3Event.backup_file_size / (1024 * 1024 * 1024)).toFixed(2)} GB`}
+                          {data.lastS3Event.backup_file_size < 1024 * 1024 && (
+                            <span className="text-yellow-600 dark:text-yellow-500 ml-1">⚠️</span>
+                          )}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -246,6 +264,23 @@ export function ServerEventHistoryDialog({
                             {event.backup_database && (
                               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 📁 {event.backup_database}
+                              </p>
+                            )}
+                            {event.backup_file_size && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                Size:{' '}
+                                <span className="font-medium text-gray-900 dark:text-gray-100">
+                                  {event.backup_file_size < 1024 
+                                    ? `${event.backup_file_size} B`
+                                    : event.backup_file_size < 1024 * 1024
+                                    ? `${(event.backup_file_size / 1024).toFixed(2)} KB`
+                                    : event.backup_file_size < 1024 * 1024 * 1024
+                                    ? `${(event.backup_file_size / (1024 * 1024)).toFixed(2)} MB`
+                                    : `${(event.backup_file_size / (1024 * 1024 * 1024)).toFixed(2)} GB`}
+                                  {event.backup_file_size < 1024 * 1024 && (
+                                    <span className="text-yellow-600 dark:text-yellow-500 ml-1">⚠️</span>
+                                  )}
+                                </span>
                               </p>
                             )}
                             {event.backup_file_key && (
