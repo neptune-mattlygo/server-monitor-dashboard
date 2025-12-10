@@ -34,6 +34,7 @@ export function BackupMonitoringSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [checkingHealth, setCheckingHealth] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Form state
@@ -151,6 +152,41 @@ export function BackupMonitoringSettings() {
       setMessage({ type: 'error', text: error.message || 'Test run failed' });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleHealthCheck = async () => {
+    setCheckingHealth(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/backup-monitoring/health', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Health check failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.healthy) {
+        setMessage({ 
+          type: 'success', 
+          text: 'All environment variables are configured correctly' 
+        });
+      } else {
+        setMessage({ 
+          type: 'error', 
+          text: `Missing environment variables: ${data.missing_variables.join(', ')}` 
+        });
+      }
+    } catch (error: any) {
+      console.error('Health check failed:', error);
+      setMessage({ type: 'error', text: error.message || 'Health check failed' });
+    } finally {
+      setCheckingHealth(false);
     }
   };
 
@@ -318,6 +354,14 @@ export function BackupMonitoringSettings() {
             >
               <Play className="h-4 w-4 mr-2" />
               {testing ? 'Running...' : 'Run Test Check'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleHealthCheck}
+              disabled={checkingHealth}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              {checkingHealth ? 'Checking...' : 'Check Health'}
             </Button>
           </div>
         </div>
