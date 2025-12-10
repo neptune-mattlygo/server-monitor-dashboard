@@ -103,7 +103,7 @@ export function ServerEventHistoryDialog({
           </div>
         ) : data ? (
           <Tabs defaultValue="status" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="status">
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Status History
@@ -111,10 +111,6 @@ export function ServerEventHistoryDialog({
               <TabsTrigger value="s3">
                 <Cloud className="h-4 w-4 mr-2" />
                 S3 Events
-              </TabsTrigger>
-              <TabsTrigger value="backups">
-                <Database className="h-4 w-4 mr-2" />
-                Backups
               </TabsTrigger>
               <TabsTrigger value="filemaker">
                 <Server className="h-4 w-4 mr-2" />
@@ -273,62 +269,6 @@ export function ServerEventHistoryDialog({
                 ) : (
                   <p className="text-center text-gray-500 py-8">
                     No S3 events recorded
-                  </p>
-                )}
-              </TabsContent>
-
-              {/* Backups Tab */}
-              <TabsContent value="backups" className="space-y-4">
-                {data.lastBackup && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Database className="h-5 w-5 text-blue-600" />
-                      <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                        Most Recent Backup
-                      </h3>
-                    </div>
-                    <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">
-                      {formatDateTime(data.lastBackup.created_at)}
-                    </p>
-                    {data.lastBackup.message && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {data.lastBackup.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {data.events.backups.length > 0 ? (
-                  <div className="space-y-3">
-                    {data.events.backups.map((event: EventData) => (
-                      <div
-                        key={event.id}
-                        className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Database className="h-4 w-4 text-blue-500" />
-                              <Badge variant="outline">
-                                {event.status || 'Backup'}
-                              </Badge>
-                            </div>
-                            {event.message && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {event.message}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-500 ml-4">
-                            {formatDateTime(event.created_at)}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500 py-8">
-                    No backup events recorded
                   </p>
                 )}
               </TabsContent>

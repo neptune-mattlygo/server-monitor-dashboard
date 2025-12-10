@@ -59,6 +59,11 @@ export async function GET(
       .order('created_at', { ascending: false })
       .limit(20);
 
+    // Filter out backup.config files from display
+    const filteredS3Events = s3Events?.filter(event => 
+      event.backup_database !== 'backup.config'
+    ) || [];
+
     // Calculate uptime (time since last 'down' event)
     const lastDownEvent = statusEvents?.find(e => 
       e.new_status === 'down' || 
@@ -91,8 +96,8 @@ export async function GET(
     // Get most recent FileMaker event
     const lastFilemakerEvent = filemakerEvents?.[0] || null;
 
-    // Get most recent S3 event
-    const lastS3Event = s3Events?.[0] || null;
+    // Get most recent S3 event (excluding backup.config)
+    const lastS3Event = filteredS3Events[0] || null;
 
     return NextResponse.json({
       server: {
@@ -110,7 +115,7 @@ export async function GET(
         status: statusEvents?.slice(0, 20) || [],
         backups: backupEvents || [],
         filemaker: filemakerEvents || [],
-        s3: s3Events || [],
+        s3: filteredS3Events,
       },
       lastBackup,
       lastFilemakerEvent,
