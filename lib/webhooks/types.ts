@@ -33,11 +33,22 @@ export interface BackupPayload {
 }
 
 export interface AWSS3Payload {
+  // SNS notification wrapper
+  Type?: string;
+  Message?: string; // JSON string containing S3Records
+  Subject?: string;
+  // Direct S3 event format
   Records?: Array<{
     eventName: string;
     s3: {
+      s3SchemaVersion?: string;
+      configurationId?: string;
       bucket: { name: string };
-      object: { key: string };
+      object: { 
+        key: string;
+        size?: number;
+        eTag?: string;
+      };
     };
   }>;
   operation?: string;
@@ -48,8 +59,11 @@ export interface AWSS3Payload {
 
 export interface ParsedWebhookData {
   serverName: string;
-  eventType: 'status_change' | 'backup' | 's3_restore' | 'filemaker_event';
+  eventType: 'status_change' | 'backup' | 's3_restore' | 'filemaker_event' | 'sns_test' | 'backup_added';
   status: string;
   message: string;
   metadata?: Record<string, any>;
+  backupEventType?: string;
+  backupDatabase?: string;
+  backupFileKey?: string;
 }

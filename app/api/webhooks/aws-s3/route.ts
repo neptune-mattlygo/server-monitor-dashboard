@@ -85,6 +85,9 @@ export async function POST(request: NextRequest) {
         status: parsedData.status,
         message: parsedData.message,
         payload: payload as any,
+        backup_event_type: parsedData.backupEventType,
+        backup_database: parsedData.backupDatabase,
+        backup_file_key: parsedData.backupFileKey,
       });
 
       return NextResponse.json({ success: true, serverId: newServer.id });
@@ -98,6 +101,9 @@ export async function POST(request: NextRequest) {
       status: parsedData.status,
       message: parsedData.message,
       payload: payload as any,
+      backup_event_type: parsedData.backupEventType,
+      backup_database: parsedData.backupDatabase,
+      backup_file_key: parsedData.backupFileKey,
     });
 
     return NextResponse.json({ success: true, serverId: server.id });
