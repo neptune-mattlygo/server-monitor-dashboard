@@ -32,12 +32,13 @@ export async function POST(request: NextRequest) {
 
     // Parse webhook payload
     const parsedData = parseAWSS3Webhook(payload);
+    const bucketName = parsedData.metadata?.bucket || parsedData.serverName;
 
-    // Find server by name (bucket name)
+    // Find server by bucket field
     const { data: server } = await supabaseAdmin
       .from('servers')
       .select('id')
-      .eq('name', parsedData.serverName)
+      .eq('bucket', bucketName)
       .single();
 
     if (!server) {
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
         .from('servers')
         .insert({
           name: parsedData.serverName,
+          bucket: bucketName,
           current_status: 'up',
           server_type: 'storage',
           metadata: { source: 'aws_s3', ...parsedData.metadata },
