@@ -21,20 +21,31 @@ The script exports all data from these tables:
 - server_events
 - webhook_secrets
 
-### 2. Apply to Local Database
+### 2. Start Local Supabase (if not running)
 
 ```bash
-npx supabase db reset
+npx supabase start
+```
+
+(Ignore config warnings - it still works)
+
+### 3. Apply to Local Database
+
+```bash
+./scripts/apply-seed-to-local.sh
 ```
 
 This will:
-1. Drop your local database
-2. Re-run all migrations
-3. Apply the seed file with production data
+1. Clear existing local data
+2. Apply the production seed file
+3. Keep all migrations intact
 
-### 3. Test Your Changes
+### 4. Test Your Changes
 
 Your local database now contains a copy of production data. Test away!
+
+- View data: http://localhost:54323 (Supabase Studio)
+- Run app: `npm run dev`
 
 ## Manual Method
 
@@ -84,28 +95,32 @@ PGPASSWORD="$DB_PASSWORD" pg_dump \
 ### Workflow Example
 
 ```bash
-# 1. Get production data
+# 1. Make sure local Supabase is running
+npx supabase start  # ignore config warnings
+
+# 2. Get production data
 ./scripts/export-production-to-seed.sh
 
-# 2. Reset local DB with production data
-npx supabase db reset
+# 3. Load production data to local DB
+./scripts/apply-seed-to-local.sh
 
-# 3. Create new migration
-npx supabase migration new add_my_feature
+# 4. Create new migration file manually
+# Create: supabase/migrations/YYYYMMDDHHMMSS_my_feature.sql
 
-# 4. Write your SQL in the new migration file
+# 5. Write your SQL in the new migration file
 
-# 5. Apply it locally
-npx supabase db reset
+# 6. Apply it locally via Supabase Studio
+# Open http://localhost:54323 → SQL Editor → paste migration SQL
 
-# 6. Test thoroughly
+# 7. Test thoroughly with production data
 
-# 7. If all looks good, commit
+# 8. If all looks good, commit
 git add supabase/migrations/
 git commit -m "feat: add my feature"
 git push origin main
 
-# 8. Apply to production (manually via Supabase Dashboard)
+# 9. Apply to production via Supabase Dashboard
+# Dashboard → SQL Editor → paste migration SQL
 ```
 
 ## Important Notes
@@ -149,16 +164,17 @@ Double-check your:
 - Project ID (from dashboard URL: `https://supabase.com/dashboard/project/[PROJECT_ID]`)
 - Database password (found in Settings → Database)
 
-### Supabase CLI issues
+### Supabase CLI config errors
 
-The CLI has known config issues. If `npx supabase db reset` fails:
+The CLI has known config issues with PostgreSQL 17. The `npx supabase db reset` command will fail with "Invalid db.major_version: 17".
 
-1. Apply migration manually via psql:
-```bash
-psql postgresql://postgres:postgres@localhost:54322/postgres -f supabase/migrations/YOUR_MIGRATION.sql
-```
-
-2. Or use Supabase Studio (http://localhost:54323) → SQL Editor
+**Workaround**: Use the provided scripts instead:
+- Use `./scripts/apply-seed-to-local.sh` to load production data
+- Apply migrations via Supabase Studio (http://localhost:54323) → SQL Editor
+- Or use Docker directly:
+  ```bash
+  docker exec -i supabase-db-server-monitor psql -U postgres -d postgres < supabase/migrations/YOUR_MIGRATION.sql
+  ```
 
 ## Alternative: Snapshot Testing
 
