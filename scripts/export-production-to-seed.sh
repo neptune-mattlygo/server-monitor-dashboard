@@ -31,8 +31,16 @@ DB_USER="postgres"
 echo ""
 echo "🔌 Connecting to production database..."
 
+# Use full path to pg_dump (Homebrew install)
+PG_DUMP="/opt/homebrew/opt/postgresql@16/bin/pg_dump"
+
+# Fallback to system pg_dump if not found
+if [ ! -f "$PG_DUMP" ]; then
+  PG_DUMP=$(which pg_dump 2>/dev/null || echo "pg_dump")
+fi
+
 # Export schema and data using pg_dump
-PGPASSWORD="$DB_PASSWORD" pg_dump \
+PGPASSWORD="$DB_PASSWORD" "$PG_DUMP" \
   -h "$DB_HOST" \
   -p "$DB_PORT" \
   -U "$DB_USER" \
