@@ -40,6 +40,9 @@ interface Server {
     created_at: string;
     message?: string;
     status?: string;
+    backup_event_type?: string;
+    backup_database?: string;
+    backup_file_key?: string;
   } | null;
   last_filemaker_event?: {
     created_at: string;
@@ -210,6 +213,7 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
             </TableHead>
             <TableHead>Uptime</TableHead>
             <TableHead>Last Backup</TableHead>
+            <TableHead>Database</TableHead>
             <TableHead>Last FileMaker Event</TableHead>
             <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
@@ -276,12 +280,57 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                   <span className="text-gray-400">N/A</span>
                 )}
               </TableCell>
-              <TableCell className="text-sm text-gray-600">
+              <TableCell className="text-sm">
                 {server.last_backup ? (
-                  <RelativeTime dateString={server.last_backup.created_at} />
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <div className="cursor-pointer">
+                        <div className="flex items-center gap-1">
+                          {server.last_backup.backup_event_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {server.last_backup.backup_event_type}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          <RelativeTime dateString={server.last_backup.created_at} />
+                        </div>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-sm">Backup Details</h4>
+                        {server.last_backup.backup_event_type && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">Event:</span>{' '}
+                            <span className="font-medium">{server.last_backup.backup_event_type}</span>
+                          </div>
+                        )}
+                        {server.last_backup.backup_database && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">Database:</span>{' '}
+                            <span className="font-mono text-xs">{server.last_backup.backup_database}</span>
+                          </div>
+                        )}
+                        {server.last_backup.backup_file_key && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">Path:</span>{' '}
+                            <span className="font-mono text-xs break-all">{server.last_backup.backup_file_key}</span>
+                          </div>
+                        )}
+                        <div className="text-sm">
+                          <span className="text-gray-500">Time:</span>{' '}
+                          <RelativeTime dateString={server.last_backup.created_at} />
+                        </div>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
                 ) : (
                   '-'
                 )}
+              </TableCell>
+              <TableCell className="text-sm font-mono text-xs">
+                {server.last_backup?.backup_database || '-'}
               </TableCell>
               <TableCell className="text-sm text-gray-600">
                 {server.last_filemaker_event ? (

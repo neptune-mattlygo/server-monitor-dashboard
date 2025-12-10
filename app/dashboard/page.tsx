@@ -90,12 +90,12 @@ async function getDashboardData() {
       .or('new_status.eq.up,status.eq.up')
       .order('created_at', { ascending: false });
 
-    // Get last backup events
+    // Get last backup events (including backup_added from S3)
     const { data: lastBackupEvents } = await supabaseAdmin
       .from('server_events')
-      .select('server_id, created_at, message, status')
+      .select('server_id, created_at, message, status, backup_event_type, backup_database, backup_file_key')
       .in('server_id', serverIds)
-      .eq('event_type', 'backup')
+      .or('event_type.eq.backup,event_type.eq.backup_added')
       .order('created_at', { ascending: false });
 
     // Get last FileMaker events
