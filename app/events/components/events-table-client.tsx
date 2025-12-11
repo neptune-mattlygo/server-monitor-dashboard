@@ -151,7 +151,7 @@ export function EventsTableClient({ events, currentPage, totalPages, totalEvents
 
     const groups: EventGroup[] = [];
     const backupGroups = new Map<string, ServerEvent[]>();
-    const GROUPING_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+    const GROUPING_WINDOW_MS = 60 * 60 * 1000; // 60 minutes
 
     // First pass: group backup events
     for (const event of events) {
