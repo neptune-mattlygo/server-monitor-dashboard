@@ -21,6 +21,8 @@ interface ServerEvent {
   new_status: ServerStatus | null;
   response_time_ms: number | null;
   error_message: string | null;
+  backup_database: string | null;
+  backup_file_size: number | null;
   metadata: any;
   payload: any;
   created_at: string;
@@ -30,9 +32,12 @@ interface ServerEvent {
   };
 }
 
-async function getRecentEvents() {
+async function getRecentEvents(page: number = 1, pageSize: number = 100) {
   try {
-    const { data: events, error } = await supabaseAdmin
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data: events, error, count } = await supabaseAdmin
       .from('server_events')
       .select(`
         *,
@@ -40,23 +45,27 @@ async function getRecentEvents() {
           name,
           ip_address
         )
-      `)
+      `, { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(100);
+      .range(from, to);
 
     if (error) {
       console.error('Error fetching events:', error);
-      return [];
+      return { events: [], total: 0 };
     }
 
-    return events as ServerEvent[];
+    return { events: events as ServerEvent[], total: count || 0 };
   } catch (error) {
     console.error('Error fetching events:', error);
-    return [];
+    return { events: [], total: 0 };
   }
 }
 
-export default async function EventsPage() {
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -64,7 +73,10 @@ export default async function EventsPage() {
   }
 
   const isAdmin = user.role === 'admin';
-  const events = await getRecentEvents();
+  const page = parseInt(searchParams.page || '1', 10);
+  const pageSize = 100;
+  const { events, total } = await getRecentEvents(page, pageSize);
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -76,12 +88,17 @@ export default async function EventsPage() {
             <CardHeader>
               <CardTitle>Recent Events</CardTitle>
               <CardDescription>
-                Webhook activity and server status changes (last 100 events)
+                Webhook activity and server status changes ({total.toLocaleString()} total events)
               </CardDescription>
             </CardHeader>
             <CardContent>
               {events.length > 0 ? (
-                <EventsTableClient events={events} />
+                <EventsTableClient 
+                  events={events} 
+                  currentPage={page}
+                  totalPages={totalPages}
+                  totalEvents={total}
+                />
               ) : (
                 <div className="text-center py-12">
                   <p className="text-gray-600 dark:text-gray-400">No events recorded yet</p>

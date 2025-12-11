@@ -143,15 +143,31 @@ export async function performBackupCheck() {
   const smallFileServers: OverdueServer[] = [];
   const SMALL_FILE_THRESHOLD = 1 * 1024 * 1024; // 1MB in bytes
 
+  // Track servers with no backup history
+  const serversWithNoBackups: OverdueServer[] = [];
+
   for (const server of servers) {
     const latestBackup = latestBackupMap.get(server.id);
     
-    if (!latestBackup || new Date(latestBackup.created_at) < thresholdDate) {
-      const hoursSince = latestBackup 
-        ? Math.floor((Date.now() - new Date(latestBackup.created_at).getTime()) / (1000 * 60 * 60))
-        : null;
-      
-      const fileSize = latestBackup?.backup_file_size || null;
+    if (!latestBackup) {
+      // Server has NEVER had a backup recorded - don't alert, just track
+      serversWithNoBackups.push({
+        id: server.id,
+        name: server.name,
+        ip_address: server.ip_address,
+        host_id: server.host_id,
+        host: Array.isArray(server.host) ? server.host[0] : server.host,
+        last_backup_at: null,
+        last_backup_database: null,
+        hours_since_backup: null,
+        file_size: null,
+        file_size_mb: null,
+        is_small_file: false,
+      });
+    } else if (new Date(latestBackup.created_at) < thresholdDate) {
+      // Server HAS backup history but it's overdue
+      const hoursSince = Math.floor((Date.now() - new Date(latestBackup.created_at).getTime()) / (1000 * 60 * 60));
+      const fileSize = latestBackup.backup_file_size || null;
       const fileSizeMB = fileSize ? fileSize / (1024 * 1024) : null;
       const isSmallFile = fileSize ? fileSize < SMALL_FILE_THRESHOLD : false;
 
@@ -161,8 +177,8 @@ export async function performBackupCheck() {
         ip_address: server.ip_address,
         host_id: server.host_id,
         host: Array.isArray(server.host) ? server.host[0] : server.host,
-        last_backup_at: latestBackup?.created_at || null,
-        last_backup_database: latestBackup?.backup_database || null,
+        last_backup_at: latestBackup.created_at,
+        last_backup_database: latestBackup.backup_database,
         hours_since_backup: hoursSince,
         file_size: fileSize,
         file_size_mb: fileSizeMB,
@@ -188,6 +204,12 @@ export async function performBackupCheck() {
         is_small_file: true,
       });
     }
+  }
+
+  // Log servers with no backup history for debugging
+  if (serversWithNoBackups.length > 0) {
+    console.log(`⚠️  ${serversWithNoBackups.length} servers have no backup history yet:`, 
+      serversWithNoBackups.map(s => s.name).join(', '));
   }
 
   // Log the check result

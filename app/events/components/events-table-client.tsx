@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +42,8 @@ interface ServerEvent {
   new_status: ServerStatus | null;
   response_time_ms: number | null;
   error_message: string | null;
+  backup_database: string | null;
+  backup_file_size: number | null;
   metadata: any;
   payload: any;
   created_at: string;
@@ -96,13 +98,21 @@ function SortIcon({ field, currentField, direction }: { field: SortField; curren
   return <span className="ml-1">{direction === 'asc' ? '↑' : '↓'}</span>;
 }
 
-export function EventsTableClient({ events }: { events: ServerEvent[] }) {
+interface EventsTableClientProps {
+  events: ServerEvent[];
+  currentPage: number;
+  totalPages: number;
+  totalEvents: number;
+}
+
+export function EventsTableClient({ events, currentPage, totalPages, totalEvents }: EventsTableClientProps) {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchTerm, setSearchTerm] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<ServerEvent | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Get unique event types and statuses for filters
   const eventTypes = useMemo(() => {
@@ -129,8 +139,85 @@ export function EventsTableClient({ events }: { events: ServerEvent[] }) {
     }
   };
 
+  // Group backup events from the same server within 5 minutes
+  const groupedEvents = useMemo(() => {
+    type EventGroup = {
+      id: string;
+      isGroup: boolean;
+      events: ServerEvent[];
+      representativeEvent: ServerEvent;
+      count: number;
+    };
+
+    const groups: EventGroup[] = [];
+    const backupGroups = new Map<string, ServerEvent[]>();
+    const GROUPING_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
+    // First pass: group backup events
+    for (const event of events) {
+      if (event.event_type === 'backup') {
+        const timeKey = Math.floor(new Date(event.created_at).getTime() / GROUPING_WINDOW_MS);
+        const groupKey = `${event.server_id}-${timeKey}`;
+        
+        if (!backupGroups.has(groupKey)) {
+          backupGroups.set(groupKey, []);
+        }
+        backupGroups.get(groupKey)!.push(event);
+      }
+    }
+
+    // Second pass: create groups and individual events
+    const processedEventIds = new Set<string>();
+    
+    for (const event of events) {
+      if (processedEventIds.has(event.id)) continue;
+
+      if (event.event_type === 'backup') {
+        const timeKey = Math.floor(new Date(event.created_at).getTime() / GROUPING_WINDOW_MS);
+        const groupKey = `${event.server_id}-${timeKey}`;
+        const groupEvents = backupGroups.get(groupKey) || [];
+
+        if (groupEvents.length > 1) {
+          // Create a group
+          groups.push({
+            id: groupKey,
+            isGroup: true,
+            events: groupEvents,
+            representativeEvent: groupEvents[0],
+            count: groupEvents.length,
+          });
+          groupEvents.forEach(e => processedEventIds.add(e.id));
+        } else {
+          // Single event, not grouped
+          groups.push({
+            id: event.id,
+            isGroup: false,
+            events: [event],
+            representativeEvent: event,
+            count: 1,
+          });
+          processedEventIds.add(event.id);
+        }
+      } else {
+        // Non-backup event, never grouped
+        groups.push({
+          id: event.id,
+          isGroup: false,
+          events: [event],
+          representativeEvent: event,
+          count: 1,
+        });
+        processedEventIds.add(event.id);
+      }
+    }
+
+    return groups;
+  }, [events]);
+
   const filteredAndSortedEvents = useMemo(() => {
-    let filtered = events.filter(event => {
+    let filtered = groupedEvents.filter(group => {
+      const event = group.representativeEvent;
+      
       // Search filter
       const matchesSearch = searchTerm === '' || 
         event.server?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,23 +239,25 @@ export function EventsTableClient({ events }: { events: ServerEvent[] }) {
     filtered.sort((a, b) => {
       let aValue: any;
       let bValue: any;
+      const eventA = a.representativeEvent;
+      const eventB = b.representativeEvent;
 
       switch (sortField) {
         case 'created_at':
-          aValue = new Date(a.created_at).getTime();
-          bValue = new Date(b.created_at).getTime();
+          aValue = new Date(eventA.created_at).getTime();
+          bValue = new Date(eventB.created_at).getTime();
           break;
         case 'server_name':
-          aValue = a.server?.name || '';
-          bValue = b.server?.name || '';
+          aValue = eventA.server?.name || '';
+          bValue = eventB.server?.name || '';
           break;
         case 'event_type':
-          aValue = a.event_type;
-          bValue = b.event_type;
+          aValue = eventA.event_type;
+          bValue = eventB.event_type;
           break;
         case 'response_time_ms':
-          aValue = a.response_time_ms ?? -1;
-          bValue = b.response_time_ms ?? -1;
+          aValue = eventA.response_time_ms ?? -1;
+          bValue = eventB.response_time_ms ?? -1;
           break;
         default:
           return 0;
@@ -180,7 +269,19 @@ export function EventsTableClient({ events }: { events: ServerEvent[] }) {
     });
 
     return filtered;
-  }, [events, searchTerm, eventTypeFilter, statusFilter, sortField, sortDirection]);
+  }, [groupedEvents, searchTerm, eventTypeFilter, statusFilter, sortField, sortDirection]);
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -301,79 +402,119 @@ export function EventsTableClient({ events }: { events: ServerEvent[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAndSortedEvents.map((event) => (
-              <TableRow 
-                key={event.id} 
-                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-                onClick={() => setSelectedEvent(event)}
-              >
-                <TableCell className="text-sm text-gray-600 dark:text-gray-400">
-                  {new Date(event.created_at).toLocaleString('en-US', { 
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                  })}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{event.server?.name || 'Unknown Server'}</span>
-                    {event.server?.ip_address && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {event.server.ip_address}
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getEventBadgeVariant(event.event_type)} className="capitalize">
-                    {event.event_type.replace(/_/g, ' ')}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {event.old_status && event.new_status ? (
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getStatusBadgeVariant(event.old_status)} className="capitalize">
-                        {event.old_status}
-                      </Badge>
-                      <span className="text-gray-400">→</span>
-                      <Badge variant={getStatusBadgeVariant(event.new_status)} className="capitalize">
-                        {event.new_status}
-                      </Badge>
-                    </div>
-                  ) : event.new_status ? (
-                    <Badge variant={getStatusBadgeVariant(event.new_status)} className="capitalize">
-                      {event.new_status}
-                    </Badge>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {event.response_time_ms !== null ? `${event.response_time_ms}ms` : '-'}
-                </TableCell>
-                <TableCell className="max-w-xs">
-                  {event.error_message && (
-                    <span className="text-sm text-red-600 dark:text-red-400">
-                      {event.error_message}
-                    </span>
-                  )}
-                  {event.metadata && Object.keys(event.metadata).length > 0 && (
-                    <details className="text-xs text-gray-600 dark:text-gray-400">
-                      <summary className="cursor-pointer hover:text-gray-900 dark:hover:text-gray-200">
-                        View metadata
-                      </summary>
-                      <pre className="mt-2 overflow-auto bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                        {JSON.stringify(event.metadata, null, 2)}
-                      </pre>
-                    </details>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredAndSortedEvents.map((group) => {
+              const event = group.representativeEvent;
+              const isExpanded = expandedGroups.has(group.id);
+              
+              return (
+                <React.Fragment key={group.id}>
+                  <TableRow 
+                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                    onClick={() => group.isGroup ? toggleGroup(group.id) : setSelectedEvent(event)}
+                  >
+                    <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                      {new Date(event.created_at).toLocaleString('en-US', { 
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{event.server?.name || 'Unknown Server'}</span>
+                        {event.server?.ip_address && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {event.server.ip_address}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={getEventBadgeVariant(event.event_type)} className="capitalize">
+                          {event.event_type.replace(/_/g, ' ')}
+                        </Badge>
+                        {group.isGroup && (
+                          <Badge variant="outline" className="text-xs">
+                            {group.count} files {isExpanded ? '▼' : '▶'}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {event.old_status && event.new_status ? (
+                        <div className="flex items-center gap-2">
+                          <Badge variant={getStatusBadgeVariant(event.old_status)} className="capitalize">
+                            {event.old_status}
+                          </Badge>
+                          <span className="text-gray-400">→</span>
+                          <Badge variant={getStatusBadgeVariant(event.new_status)} className="capitalize">
+                            {event.new_status}
+                          </Badge>
+                        </div>
+                      ) : event.new_status ? (
+                        <Badge variant={getStatusBadgeVariant(event.new_status)} className="capitalize">
+                          {event.new_status}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {event.response_time_ms !== null ? `${event.response_time_ms}ms` : '-'}
+                    </TableCell>
+                    <TableCell className="max-w-xs">
+                      {event.error_message && (
+                        <span className="text-sm text-red-600 dark:text-red-400">
+                          {event.error_message}
+                        </span>
+                      )}
+                      {event.metadata && Object.keys(event.metadata).length > 0 && (
+                        <details className="text-xs text-gray-600 dark:text-gray-400">
+                          <summary className="cursor-pointer hover:text-gray-900 dark:hover:text-gray-200">
+                            View metadata
+                          </summary>
+                          <pre className="mt-2 overflow-auto bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                            {JSON.stringify(event.metadata, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                  {/* Expanded group rows */}
+                  {group.isGroup && isExpanded && group.events.map((groupEvent, idx) => (
+                    <TableRow 
+                      key={`${group.id}-${idx}`}
+                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 bg-gray-50/50 dark:bg-gray-800/50"
+                      onClick={() => setSelectedEvent(groupEvent)}
+                    >
+                      <TableCell className="text-sm text-gray-600 dark:text-gray-400 pl-8">
+                        {new Date(groupEvent.created_at).toLocaleString('en-US', { 
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: false
+                        })}
+                      </TableCell>
+                      <TableCell className="pl-8 text-sm text-gray-600 dark:text-gray-400">
+                        {groupEvent.payload?.backup_database || groupEvent.backup_database || '-'}
+                      </TableCell>
+                      <TableCell colSpan={4} className="text-sm text-gray-600 dark:text-gray-400">
+                        {groupEvent.payload?.backup_file_size && (
+                          <span className="text-xs">
+                            {(groupEvent.payload.backup_file_size / (1024 * 1024)).toFixed(2)} MB
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </React.Fragment>
+              );
+            })}
           </TableBody>
         </Table>
       ) : (
@@ -386,6 +527,41 @@ export function EventsTableClient({ events }: { events: ServerEvent[] }) {
           >
             Clear Filters
           </Button>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 px-2">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Page {currentPage} of {totalPages} ({totalEvents.toLocaleString()} total events)
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', String(currentPage - 1));
+                window.location.href = url.toString();
+              }}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', String(currentPage + 1));
+                window.location.href = url.toString();
+              }}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
       
