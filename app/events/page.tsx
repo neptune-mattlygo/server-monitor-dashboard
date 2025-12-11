@@ -64,7 +64,7 @@ async function getRecentEvents(page: number = 1, pageSize: number = 100) {
 export default async function EventsPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
   const user = await getCurrentUser();
 
@@ -73,7 +73,8 @@ export default async function EventsPage({
   }
 
   const isAdmin = user.role === 'admin';
-  const page = parseInt(searchParams.page || '1', 10);
+  const params = await searchParams;
+  const page = parseInt(params.page || '1', 10);
   const pageSize = 100;
   const { events, total } = await getRecentEvents(page, pageSize);
   const totalPages = Math.ceil(total / pageSize);
