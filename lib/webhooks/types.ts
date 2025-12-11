@@ -37,6 +37,10 @@ export interface AWSS3Payload {
   Type?: string;
   Message?: string; // JSON string containing S3Records
   Subject?: string;
+  // SNS subscription confirmation fields
+  TopicArn?: string;
+  SubscribeURL?: string;
+  Token?: string;
   // Direct S3 event format
   Records?: Array<{
     eventName: string;
