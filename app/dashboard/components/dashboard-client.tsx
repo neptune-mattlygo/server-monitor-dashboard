@@ -64,6 +64,15 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const [collapsedHosts, setCollapsedHosts] = useState<Set<string>>(new Set());
   const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [router]);
+
   // Cleanup auto-scroll interval on unmount
   useEffect(() => {
     return () => {

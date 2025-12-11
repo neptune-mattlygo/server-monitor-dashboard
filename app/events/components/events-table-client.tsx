@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -106,6 +107,7 @@ interface EventsTableClientProps {
 }
 
 export function EventsTableClient({ events, currentPage, totalPages, totalEvents }: EventsTableClientProps) {
+  const router = useRouter();
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchTerm, setSearchTerm] = useState('');
@@ -113,6 +115,15 @@ export function EventsTableClient({ events, currentPage, totalPages, totalEvents
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<ServerEvent | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [router]);
 
   // Get unique event types and statuses for filters
   const eventTypes = useMemo(() => {
