@@ -60,38 +60,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!server) {
-      // Create new server for this S3 bucket
-      const { data: newServer } = await supabaseAdmin
-        .from('servers')
-        .insert({
-          name: parsedData.serverName,
-          bucket: bucketName,
-          current_status: 'up',
-          server_type: 'storage',
-          metadata: { source: 'aws_s3', ...parsedData.metadata },
-        })
-        .select('id')
-        .single();
-
-      if (!newServer) {
-        return NextResponse.json({ error: 'Failed to create server' }, { status: 500 });
-      }
-
-      // Log server event
-      await supabaseAdmin.from('server_events').insert({
-        server_id: newServer.id,
-        event_type: parsedData.eventType,
-        event_source: 'aws_s3',
-        status: parsedData.status,
-        message: parsedData.message,
-        payload: payload as any,
-        backup_event_type: parsedData.backupEventType,
-        backup_database: parsedData.backupDatabase,
-        backup_file_key: parsedData.backupFileKey,
-        backup_file_size: parsedData.backupFileSize || null,
-      });
-
-      return NextResponse.json({ success: true, serverId: newServer.id });
+      // Server not found - log warning but don't auto-create
+      console.warn(`No server found with bucket: ${bucketName}`);
+      return NextResponse.json({ 
+        error: 'Server not found',
+        message: `No server configured for bucket: ${bucketName}. Please add a server with this bucket name in the dashboard.`
+      }, { status: 404 });
     }
 
     // Log server event for existing server

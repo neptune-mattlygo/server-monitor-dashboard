@@ -48,6 +48,7 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
     server_type: '',
     ip_address: '',
     current_status: 'up' as ServerStatus,
+    bucket: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,6 +79,7 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
         server_type: '',
         ip_address: '',
         current_status: 'up',
+        bucket: '',
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -153,6 +155,19 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
                 onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })}
                 placeholder="e.g., 192.168.1.100"
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="bucket">S3 Backup Bucket Name</Label>
+              <Input
+                id="bucket"
+                value={formData.bucket}
+                onChange={(e) => setFormData({ ...formData, bucket: e.target.value })}
+                placeholder="e.g., backup-ncdv"
+              />
+              <p className="text-xs text-muted-foreground">
+                AWS S3 bucket name for linking backup events
+              </p>
             </div>
 
             <div className="grid gap-2">
