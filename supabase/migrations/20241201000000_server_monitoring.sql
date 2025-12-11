@@ -7,7 +7,7 @@
 
 -- Profiles table (modified from base template for Azure AD and local auth)
 CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   azure_id TEXT UNIQUE,
   email TEXT UNIQUE NOT NULL,
   first_name TEXT,
