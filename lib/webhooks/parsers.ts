@@ -61,6 +61,20 @@ export function parseBackupWebhook(payload: BackupPayload): ParsedWebhookData {
 
 // Parse AWS S3 webhook
 export function parseAWSS3Webhook(payload: AWSS3Payload): ParsedWebhookData {
+  // Handle SNS subscription confirmation
+  if (payload.Type === 'SubscriptionConfirmation') {
+    return {
+      serverName: 'SNS Subscription',
+      eventType: 'sns_test',
+      status: 'info',
+      message: 'SNS subscription confirmation received',
+      metadata: {
+        topicArn: payload.TopicArn,
+        subscribeUrl: payload.SubscribeURL,
+      },
+    };
+  }
+
   // Handle SNS notification wrapper (Message is a JSON string)
   let actualPayload = payload;
   if (payload.Type === 'Notification' && payload.Message) {
