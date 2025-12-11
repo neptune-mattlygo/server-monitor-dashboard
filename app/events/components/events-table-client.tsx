@@ -155,7 +155,7 @@ export function EventsTableClient({ events, currentPage, totalPages, totalEvents
 
     // First pass: group backup events
     for (const event of events) {
-      if (event.event_type === 'backup') {
+      if (event.event_type === 'backup_added') {
         const timeKey = Math.floor(new Date(event.created_at).getTime() / GROUPING_WINDOW_MS);
         const groupKey = `${event.server_id}-${timeKey}`;
         
@@ -172,7 +172,7 @@ export function EventsTableClient({ events, currentPage, totalPages, totalEvents
     for (const event of events) {
       if (processedEventIds.has(event.id)) continue;
 
-      if (event.event_type === 'backup') {
+      if (event.event_type === 'backup_added') {
         const timeKey = Math.floor(new Date(event.created_at).getTime() / GROUPING_WINDOW_MS);
         const groupKey = `${event.server_id}-${timeKey}`;
         const groupEvents = backupGroups.get(groupKey) || [];
