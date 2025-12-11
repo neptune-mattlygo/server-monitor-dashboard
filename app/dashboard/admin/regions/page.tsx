@@ -32,7 +32,7 @@ export default async function RegionsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <AdminHeader
         title="Regions Management"
         description="Create and manage regions for organizing servers on the status page"

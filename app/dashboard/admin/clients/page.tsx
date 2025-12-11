@@ -43,7 +43,7 @@ export default async function ClientsPage({
   const { data: clients, count } = await query;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <AdminHeader
         title="Clients & Subscribers"
         description="Manage email subscribers and their notification preferences"

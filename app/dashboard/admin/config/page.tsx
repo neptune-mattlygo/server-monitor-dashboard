@@ -20,7 +20,7 @@ export default async function ConfigPage() {
     .single();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gray-900">
       <AdminHeader
         title="Status Page Configuration"
         description="Customize the appearance and settings of your public status page"
