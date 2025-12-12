@@ -63,9 +63,22 @@ export async function PUT(request: NextRequest) {
     if (notification_emails !== undefined) updateData.notification_emails = notification_emails;
     if (enabled !== undefined) updateData.enabled = enabled;
 
+    // First get the existing record to update
+    const { data: existingSettings, error: fetchError } = await supabaseAdmin
+      .from('metadata_refresh_settings')
+      .select('id')
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching existing settings:', fetchError);
+      return NextResponse.json({ error: 'Failed to fetch existing settings' }, { status: 500 });
+    }
+
     const { data: settings, error } = await supabaseAdmin
       .from('metadata_refresh_settings')
       .update(updateData)
+      .eq('id', existingSettings.id)
+      .select()
       .single();
 
     if (error) {
