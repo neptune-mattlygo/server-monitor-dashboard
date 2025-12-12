@@ -20,7 +20,7 @@ export async function GET(
 
     const { data: server, error } = await supabaseAdmin
       .from('servers')
-      .select('id, name, admin_url, admin_username, admin_password')
+      .select('id, name, admin_url, admin_username, admin_password, fm_metadata, fm_metadata_updated_at, fm_server_version, fm_host_name, fmserver_name')
       .eq('id', id)
       .single();
 
@@ -46,6 +46,13 @@ export async function GET(
         admin_url: server.admin_url,
         admin_username: server.admin_username,
         admin_password: decryptedPassword,
+      },
+      server: {
+        fm_metadata: server.fm_metadata,
+        fm_metadata_updated_at: server.fm_metadata_updated_at,
+        fm_server_version: server.fm_server_version,
+        fm_host_name: server.fm_host_name,
+        fmserver_name: server.fmserver_name,
       },
     });
   } catch (error) {

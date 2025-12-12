@@ -75,10 +75,12 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingCredentials, setLoadingCredentials] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
 
   // Fetch decrypted credentials when dialog opens
   useEffect(() => {
     if (open && server?.id) {
+      setActiveTab('general'); // Reset to general tab
       setLoadingCredentials(true);
       fetch(`/api/servers/${server.id}/credentials`)
         .then(res => res.json())
@@ -130,7 +132,7 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="general" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="metadata">FileMaker Metadata</TabsTrigger>
@@ -238,8 +240,29 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
                     
                     if (response.ok) {
                       if (data.success) {
-                        alert('Metadata fetched successfully! The page will refresh to show updates.');
-                        window.location.reload();
+                        // Refetch server data to show updated metadata
+                        if (editedServer.id) {
+                          fetch(`/api/servers/${editedServer.id}/credentials`)
+                            .then(res => res.json())
+                            .then(credData => {
+                              if (credData.credentials) {
+                                setEditedServer(prev => prev ? {
+                                  ...prev,
+                                  ...credData.server, // Include any updated metadata fields
+                                  admin_url: credData.credentials.admin_url,
+                                  admin_username: credData.credentials.admin_username,
+                                  admin_password: credData.credentials.admin_password,
+                                } : null);
+                              }
+                              // Switch to metadata tab to show the results
+                              setActiveTab('metadata');
+                            })
+                            .catch(err => {
+                              console.error('Failed to refresh server data:', err);
+                              // Still switch to metadata tab even if refresh fails
+                              setActiveTab('metadata');
+                            });
+                        }
                       } else {
                         alert('Unexpected response format. Check console for details.');
                         console.error('Unexpected successful response:', data);
