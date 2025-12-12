@@ -55,7 +55,12 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to decrypt credentials' }, { status: 500 });
     }
 
-    const baseUrl = server.admin_url.replace(/\/$/, '');
+    // Ensure URL has protocol
+    let baseUrl = server.admin_url.trim();
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      baseUrl = `https://${baseUrl}`;
+    }
+    baseUrl = baseUrl.replace(/\/$/, '');
     
     // Step 1: Get authentication token
     const authUrl = `${baseUrl}/fmi/admin/api/v2/user/auth`;
@@ -63,13 +68,22 @@ export async function POST(
     
     console.log(`Fetching FileMaker auth token from ${authUrl}...`);
     
-    const authResponse = await fetch(authUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${authHeader}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    let authResponse;
+    try {
+      authResponse = await fetch(authUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${authHeader}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (fetchError) {
+      console.error('Network error during FileMaker auth:', fetchError);
+      return NextResponse.json({ 
+        error: 'Network error connecting to FileMaker Server',
+        details: fetchError instanceof Error ? fetchError.message : 'Connection failed'
+      }, { status: 503 });
+    }
 
     if (!authResponse.ok) {
       const errorText = await authResponse.text();
