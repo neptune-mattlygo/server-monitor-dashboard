@@ -24,6 +24,12 @@ export async function POST(request: NextRequest) {
     const payload: FileMakerPayload = await request.json();
     const parsedData = parseFileMakerWebhook(payload);
 
+    console.log('FileMaker webhook received:', {
+      serverName: parsedData.serverName,
+      eventType: parsedData.eventType,
+      status: parsedData.status
+    });
+
     // Find server by fmserver_name first, then fallback to name
     let server = null;
     
@@ -50,7 +56,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!server) {
-      return NextResponse.json({ error: 'Server not found' }, { status: 404 });
+      console.error('FileMaker webhook: Server not found', {
+        searchedName: parsedData.serverName,
+        payload: payload
+      });
+      return NextResponse.json({ 
+        error: 'Server not found',
+        details: `No server found with name or fmserver_name matching "${parsedData.serverName}"`
+      }, { status: 404 });
     }
 
     // Log server event
