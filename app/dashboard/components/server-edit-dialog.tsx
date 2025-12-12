@@ -221,13 +221,34 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
                     const response = await fetch(`/api/servers/${editedServer.id}/fetch-metadata`, {
                       method: 'POST',
                     });
-                    const data = await response.json();
+                    
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                    
+                    const responseText = await response.text();
+                    console.log('Raw response:', responseText);
+                    
+                    let data;
+                    try {
+                      data = responseText ? JSON.parse(responseText) : {};
+                    } catch (parseErr) {
+                      console.error('Failed to parse JSON:', parseErr);
+                      data = { error: 'Invalid JSON response', details: responseText };
+                    }
+                    
                     if (response.ok) {
-                      alert('Metadata fetched successfully! The page will refresh to show updates.');
-                      window.location.reload();
+                      if (data.success) {
+                        alert('Metadata fetched successfully! The page will refresh to show updates.');
+                        window.location.reload();
+                      } else {
+                        alert('Unexpected response format. Check console for details.');
+                        console.error('Unexpected successful response:', data);
+                      }
                     } else {
                       console.error('Failed to fetch metadata:', data);
-                      alert(`Failed to fetch metadata: ${data.error}${data.details ? '\n\nDetails: ' + data.details : ''}`);
+                      const errorMsg = data.error || 'Unknown error';
+                      const details = data.details ? '\n\nDetails: ' + data.details : '';
+                      alert(`Failed to fetch metadata: ${errorMsg}${details}`);
                     }
                   } catch (err) {
                     console.error('Network error fetching metadata:', err);

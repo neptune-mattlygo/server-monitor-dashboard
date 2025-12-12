@@ -190,6 +190,8 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to save metadata' }, { status: 500 });
     }
 
+    console.log('Successfully stored metadata, returning response');
+    
     return NextResponse.json({ 
       success: true, 
       metadata,
@@ -198,6 +200,7 @@ export async function POST(
 
   } catch (error) {
     console.error('Fetch FileMaker metadata error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { error: 'Failed to fetch FileMaker metadata', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
