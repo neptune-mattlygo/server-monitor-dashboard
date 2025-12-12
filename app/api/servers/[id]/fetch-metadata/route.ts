@@ -66,16 +66,21 @@ export async function POST(
     }
 
     // Ensure URL has protocol
-    let baseUrl = server.admin_url.trim();
-    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-      baseUrl = `https://${baseUrl}`;
+    let adminUrl = server.admin_url.trim();
+    if (!adminUrl.startsWith('http://') && !adminUrl.startsWith('https://')) {
+      adminUrl = `https://${adminUrl}`;
     }
-    baseUrl = baseUrl.replace(/\/$/, '');
+    
+    // Extract base server URL for API calls (remove admin-console path)
+    const url = new URL(adminUrl);
+    const baseUrl = `${url.protocol}//${url.host}`;
     
     // Step 1: Get authentication token
     const authUrl = `${baseUrl}/fmi/admin/api/v2/user/auth`;
     const authHeader = Buffer.from(`${server.admin_username}:${password}`).toString('base64');
     
+    console.log(`Admin console URL: ${adminUrl}`);
+    console.log(`Base server URL for API: ${baseUrl}`);
     console.log(`Fetching FileMaker auth token from ${authUrl}...`);
     
     let authResponse;
