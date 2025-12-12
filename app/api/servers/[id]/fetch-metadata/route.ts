@@ -206,7 +206,12 @@ export async function POST(
 
     const { error: updateError } = await supabaseAdmin
       .from('servers')
-      .update(updateData)
+      .update({
+        ...updateData,
+        last_metadata_refresh_at: new Date().toISOString(),
+        metadata_refresh_status: 'success',
+        last_metadata_error: null,
+      })
       .eq('id', id);
 
     if (updateError) {

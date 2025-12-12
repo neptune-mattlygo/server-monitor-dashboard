@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/backup-check",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/admin/refresh-metadata",
+      "schedule": "0 2 * * 0"
     }
   ]
 }
