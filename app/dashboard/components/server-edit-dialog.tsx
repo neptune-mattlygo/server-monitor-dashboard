@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -69,6 +69,28 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
   const [editedServer, setEditedServer] = useState<Server | null>(server);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingCredentials, setLoadingCredentials] = useState(false);
+
+  // Fetch decrypted credentials when dialog opens
+  useEffect(() => {
+    if (open && server?.id) {
+      setLoadingCredentials(true);
+      fetch(`/api/servers/${server.id}/credentials`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.credentials) {
+            setEditedServer(prev => prev ? {
+              ...prev,
+              admin_url: data.credentials.admin_url,
+              admin_username: data.credentials.admin_username,
+              admin_password: data.credentials.admin_password,
+            } : null);
+          }
+        })
+        .catch(err => console.error('Failed to load credentials:', err))
+        .finally(() => setLoadingCredentials(false));
+    }
+  }, [open, server?.id]);
 
   // Update editedServer when server prop changes
   if (server && editedServer?.id !== server.id) {

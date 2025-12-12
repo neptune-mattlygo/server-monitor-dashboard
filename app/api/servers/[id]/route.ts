@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth/session';
 import { canView, canUpdate, canDelete } from '@/lib/auth/permissions';
+import { encrypt } from '@/lib/crypto';
 
 export async function GET(
   request: NextRequest,
@@ -68,7 +69,7 @@ export async function PATCH(
     if (backup_monitoring_excluded !== undefined) updateData.backup_monitoring_excluded = backup_monitoring_excluded;
     if (admin_url !== undefined) updateData.admin_url = admin_url;
     if (admin_username !== undefined) updateData.admin_username = admin_username;
-    if (admin_password !== undefined) updateData.admin_password = admin_password;
+    if (admin_password !== undefined) updateData.admin_password = admin_password ? encrypt(admin_password) : null;
     if (current_status !== undefined) {
       updateData.current_status = current_status;
       updateData.last_status_change = new Date().toISOString();

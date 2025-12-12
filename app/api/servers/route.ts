@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth/session';
 import { canCreate, canView } from '@/lib/auth/permissions';
+import { encrypt } from '@/lib/crypto';
 
 export async function GET(request: NextRequest) {
   try {
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
         fmserver_name: fmserver_name || null,
         admin_url: admin_url || null,
         admin_username: admin_username || null,
-        admin_password: admin_password || null,
+        admin_password: admin_password ? encrypt(admin_password) : null,
       })
       .select()
       .single();
