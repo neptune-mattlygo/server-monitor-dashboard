@@ -164,7 +164,7 @@ async function getDashboardData() {
           last_backup: lastBackup,
           last_filemaker_event: lastFilemaker,
         };
-      }),
+      }).sort((a, b) => a.name.localeCompare(b.name)), // Sort servers alphabetically by name
     }));
 
     return {
