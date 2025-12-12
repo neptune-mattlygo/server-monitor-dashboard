@@ -80,10 +80,19 @@ export async function POST(
       }, { status: 401 });
     }
 
-    const authData: FileMakerAuthResponse = await authResponse.json();
+    const authData: any = await authResponse.json();
     
-    if (!authData.token) {
-      return NextResponse.json({ error: 'No token returned from FileMaker Server' }, { status: 500 });
+    console.log('FileMaker auth response:', JSON.stringify(authData, null, 2));
+    
+    // Try different possible token field names
+    const token = authData.token || authData.response?.token || authData.data?.token;
+    
+    if (!token) {
+      console.error('No token found in response. Full response:', authData);
+      return NextResponse.json({ 
+        error: 'No token returned from FileMaker Server',
+        details: 'Response structure: ' + JSON.stringify(Object.keys(authData))
+      }, { status: 500 });
     }
 
     console.log('FileMaker auth successful, fetching metadata...');
@@ -94,7 +103,7 @@ export async function POST(
     const metadataResponse = await fetch(metadataUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${authData.token}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
