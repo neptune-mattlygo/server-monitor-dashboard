@@ -192,14 +192,42 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
 
           <div className="grid gap-2">
             <Label htmlFor="fmserver_name">FileMaker Server Name</Label>
-            <Input
-              id="fmserver_name"
-              value={editedServer.fmserver_name || ''}
-              onChange={(e) => setEditedServer({ ...editedServer, fmserver_name: e.target.value })}
-              placeholder="e.g., FM Server Production"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="fmserver_name"
+                value={editedServer.fmserver_name || ''}
+                onChange={(e) => setEditedServer({ ...editedServer, fmserver_name: e.target.value })}
+                placeholder="e.g., FM Server Production"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  if (!editedServer.id) return;
+                  try {
+                    const response = await fetch(`/api/servers/${editedServer.id}/fetch-metadata`, {
+                      method: 'POST',
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                      alert('Metadata fetched successfully! The page will refresh to show updates.');
+                      window.location.reload();
+                    } else {
+                      alert(`Failed to fetch metadata: ${data.error}`);
+                    }
+                  } catch (err) {
+                    alert('Failed to fetch metadata');
+                  }
+                }}
+                disabled={!editedServer.admin_url || !editedServer.admin_username || !editedServer.admin_password}
+                title={!editedServer.admin_url || !editedServer.admin_username || !editedServer.admin_password ? 'Configure admin credentials first' : 'Fetch metadata from FileMaker Server'}
+              >
+                Fetch Metadata
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Server name used in FileMaker webhook payloads (if different from server name)
+              Server name used in FileMaker webhook payloads. Click "Fetch Metadata" to auto-populate from FileMaker Server.
             </p>
           </div>
 
