@@ -8,7 +8,8 @@ import { MetadataRefreshSettings } from '@/app/dashboard/components/metadata-ref
 
 export default function AdminSettingsPage() {
   return (
-    <div className="container mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="container mx-auto p-6">
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button 
@@ -56,5 +57,7 @@ export default function AdminSettingsPage() {
         </Tabs>
       </div>
     </div>
+  );
+}
   );
 }

@@ -80,15 +80,15 @@ export default async function EventsPage({
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <DashboardHeader user={user} isAdmin={isAdmin} />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-6 py-8">
         <Suspense fallback={<EventsSkeleton />}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Events</CardTitle>
-              <CardDescription>
+          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 border-b border-blue-200/50 dark:border-blue-700/50">
+              <CardTitle className="text-blue-700 dark:text-blue-300">Recent Events</CardTitle>
+              <CardDescription className="text-blue-600 dark:text-blue-400">
                 Webhook activity and server status changes ({total.toLocaleString()} total events)
               </CardDescription>
             </CardHeader>

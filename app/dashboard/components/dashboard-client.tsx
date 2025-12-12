@@ -349,7 +349,6 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
             <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">{summary.maintenance}</div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Scheduled work</p>
           </CardContent>
-          </CardContent>
         </Card>
       </div>
 

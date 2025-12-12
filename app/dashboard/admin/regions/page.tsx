@@ -32,12 +32,12 @@ export default async function RegionsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <AdminHeader
         title="Regions Management"
         description="Create and manage regions for organizing servers on the status page"
       />
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-6 py-6">
         <RegionsManager initialRegions={regionsWithCount || []} />
       </div>
     </div>
