@@ -34,6 +34,9 @@ interface Server {
   bucket?: string | null;
   fmserver_name?: string | null;
   backup_monitoring_excluded?: boolean;
+  admin_url?: string | null;
+  admin_username?: string | null;
+  admin_password?: string | null;
   uptime_display?: string | null;
   last_backup?: {
     created_at: string;
@@ -176,6 +179,9 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
           bucket: updatedServer.bucket,
           fmserver_name: updatedServer.fmserver_name,
           backup_monitoring_excluded: updatedServer.backup_monitoring_excluded,
+          admin_url: updatedServer.admin_url,
+          admin_username: updatedServer.admin_username,
+          admin_password: updatedServer.admin_password,
         }),
       });
 

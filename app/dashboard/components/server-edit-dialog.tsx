@@ -37,6 +37,9 @@ interface Server {
   bucket?: string | null;
   backup_monitoring_excluded?: boolean;
   fmserver_name?: string | null;
+  admin_url?: string | null;
+  admin_username?: string | null;
+  admin_password?: string | null;
 }
 
 interface ServerEditDialogProps {
@@ -176,6 +179,50 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
             <p className="text-xs text-muted-foreground">
               Server name used in FileMaker webhook payloads (if different from server name)
             </p>
+          </div>
+
+          <div className="border-t pt-4 mt-2">
+            <h4 className="font-semibold mb-3 text-sm">Admin Console Credentials</h4>
+            
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="admin_url">Admin Console URL</Label>
+                <Input
+                  id="admin_url"
+                  type="url"
+                  value={editedServer.admin_url || ''}
+                  onChange={(e) => setEditedServer({ ...editedServer, admin_url: e.target.value })}
+                  placeholder="https://admin.example.com"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="admin_username">Admin Username</Label>
+                <Input
+                  id="admin_username"
+                  type="text"
+                  autoComplete="username"
+                  value={editedServer.admin_username || ''}
+                  onChange={(e) => setEditedServer({ ...editedServer, admin_username: e.target.value })}
+                  placeholder="admin"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="admin_password">Admin Password</Label>
+                <Input
+                  id="admin_password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={editedServer.admin_password || ''}
+                  onChange={(e) => setEditedServer({ ...editedServer, admin_password: e.target.value })}
+                  placeholder="••••••••"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Password is encrypted and stored securely
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">

@@ -48,6 +48,9 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
     current_status: 'up' as ServerStatus,
     bucket: '',
     fmserver_name: '',
+    admin_url: '',
+    admin_username: '',
+    admin_password: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,6 +81,9 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
         current_status: 'up',
         bucket: '',
         fmserver_name: '',
+        admin_url: '',
+        admin_username: '',
+        admin_password: '',
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -159,6 +165,50 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
               <p className="text-xs text-muted-foreground">
                 Server name used in FileMaker webhook payloads (if different from server name)
               </p>
+            </div>
+
+            <div className="border-t pt-4 mt-2">
+              <h4 className="font-semibold mb-3 text-sm">Admin Console Credentials</h4>
+              
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="admin_url">Admin Console URL</Label>
+                  <Input
+                    id="admin_url"
+                    type="url"
+                    value={formData.admin_url}
+                    onChange={(e) => setFormData({ ...formData, admin_url: e.target.value })}
+                    placeholder="https://admin.example.com"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="admin_username">Admin Username</Label>
+                  <Input
+                    id="admin_username"
+                    type="text"
+                    autoComplete="username"
+                    value={formData.admin_username}
+                    onChange={(e) => setFormData({ ...formData, admin_username: e.target.value })}
+                    placeholder="admin"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="admin_password">Admin Password</Label>
+                  <Input
+                    id="admin_password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={formData.admin_password}
+                    onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
+                    placeholder="••••••••"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Password is encrypted and stored securely
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="grid gap-2">

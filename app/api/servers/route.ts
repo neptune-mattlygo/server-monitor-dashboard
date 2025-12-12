@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, host_id, current_status, metadata, bucket, fmserver_name } = body;
+    const { name, host_id, current_status, metadata, bucket, fmserver_name, admin_url, admin_username, admin_password } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -62,6 +62,9 @@ export async function POST(request: NextRequest) {
         metadata: metadata || {},
         bucket: bucket || null,
         fmserver_name: fmserver_name || null,
+        admin_url: admin_url || null,
+        admin_username: admin_username || null,
+        admin_password: admin_password || null,
       })
       .select()
       .single();
