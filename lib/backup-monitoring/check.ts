@@ -78,8 +78,8 @@ export async function performBackupCheck() {
     };
   }
 
-  // Get all servers
-  const { data: servers, error: serversError } = await supabaseAdmin
+  // Get all servers that are not excluded from backup monitoring
+  const { data: servers, error: serversError} = await supabaseAdmin
     .from('servers')
     .select(`
       id,
@@ -88,6 +88,7 @@ export async function performBackupCheck() {
       host_id,
       host:hosts(name)
     `)
+    .eq('backup_monitoring_excluded', false)
     .order('name');
 
   if (serversError) {
@@ -150,8 +151,8 @@ export async function performBackupCheck() {
     const latestBackup = latestBackupMap.get(server.id);
     
     if (!latestBackup) {
-      // Server has NEVER had a backup recorded - don't alert, just track
-      serversWithNoBackups.push({
+      // Server has NEVER had a backup recorded
+      const neverBackedUpServer: OverdueServer = {
         id: server.id,
         name: server.name,
         ip_address: server.ip_address,
@@ -163,7 +164,14 @@ export async function performBackupCheck() {
         file_size: null,
         file_size_mb: null,
         is_small_file: false,
-      });
+      };
+      
+      serversWithNoBackups.push(neverBackedUpServer);
+      
+      // Also add to overdue list if configured to alert on never-backed-up servers
+      if (config.alert_on_never_backed_up) {
+        overdueServers.push(neverBackedUpServer);
+      }
     } else if (new Date(latestBackup.created_at) < thresholdDate) {
       // Server HAS backup history but it's overdue
       const hoursSince = Math.floor((Date.now() - new Date(latestBackup.created_at).getTime()) / (1000 * 60 * 60));
@@ -208,7 +216,8 @@ export async function performBackupCheck() {
 
   // Log servers with no backup history for debugging
   if (serversWithNoBackups.length > 0) {
-    console.log(`⚠️  ${serversWithNoBackups.length} servers have no backup history yet:`, 
+    const alertingOn = config.alert_on_never_backed_up ? ' (ALERTING)' : ' (not alerting)';
+    console.log(`⚠️  ${serversWithNoBackups.length} servers have no backup history yet${alertingOn}:`, 
       serversWithNoBackups.map(s => s.name).join(', '));
   }
 

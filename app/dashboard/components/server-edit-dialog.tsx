@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -36,6 +37,7 @@ interface Server {
   ip_address: string | null;
   current_status: ServerStatus;
   bucket?: string | null;
+  backup_monitoring_excluded?: boolean;
 }
 
 interface ServerEditDialogProps {
@@ -183,6 +185,20 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
             <p className="text-xs text-muted-foreground">
               AWS S3 bucket name for linking backup events
             </p>
+          </div>
+
+          <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="backup-monitoring">Exclude from Backup Monitoring</Label>
+              <p className="text-xs text-muted-foreground">
+                When enabled, this server will not trigger backup alerts
+              </p>
+            </div>
+            <Switch
+              id="backup-monitoring"
+              checked={editedServer.backup_monitoring_excluded || false}
+              onCheckedChange={(checked) => setEditedServer({ ...editedServer, backup_monitoring_excluded: checked })}
+            />
           </div>
 
           <div className="grid gap-2">

@@ -15,6 +15,7 @@ interface BackupMonitoringConfig {
   is_enabled: boolean;
   threshold_hours: number;
   email_recipients: string[];
+  alert_on_never_backed_up: boolean;
   check_schedule: string;
   last_check_at: string | null;
 }
@@ -40,6 +41,7 @@ export function BackupMonitoringSettings() {
   // Form state
   const [isEnabled, setIsEnabled] = useState(false);
   const [thresholdHours, setThresholdHours] = useState(24);
+  const [alertOnNeverBackedUp, setAlertOnNeverBackedUp] = useState(true);
   const [emailInput, setEmailInput] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
 
@@ -58,6 +60,7 @@ export function BackupMonitoringSettings() {
         setConfig(data.config);
         setIsEnabled(data.config.is_enabled);
         setThresholdHours(data.config.threshold_hours);
+        setAlertOnNeverBackedUp(data.config.alert_on_never_backed_up ?? true);
         setEmailList(data.config.email_recipients || []);
       }
     } catch (error) {
@@ -91,6 +94,7 @@ export function BackupMonitoringSettings() {
           is_enabled: isEnabled,
           threshold_hours: thresholdHours,
           email_recipients: emailList,
+          alert_on_never_backed_up: alertOnNeverBackedUp,
         }),
       });
 
@@ -293,6 +297,26 @@ export function BackupMonitoringSettings() {
             <p className="text-sm text-gray-600">
               Alert if a backup hasn't been made within this many hours
             </p>
+          </div>
+
+          {/* Alert on Never Backed Up */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="alert-never-backed-up">
+                  Alert on Never Backed Up Servers
+                </Label>
+                <p className="text-sm text-gray-600">
+                  Send alerts for servers that have never had a successful backup
+                </p>
+              </div>
+              <Switch
+                id="alert-never-backed-up"
+                checked={alertOnNeverBackedUp}
+                onCheckedChange={setAlertOnNeverBackedUp}
+                disabled={!isEnabled}
+              />
+            </div>
           </div>
 
           {/* Email Recipients */}

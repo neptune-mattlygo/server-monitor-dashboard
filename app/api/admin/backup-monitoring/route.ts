@@ -51,11 +51,15 @@ export async function PUT(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { is_enabled, threshold_hours, email_recipients } = body;
+    const { is_enabled, threshold_hours, email_recipients, alert_on_never_backed_up } = body;
 
     // Validate inputs
     if (typeof is_enabled !== 'boolean') {
       return NextResponse.json({ error: 'is_enabled must be a boolean' }, { status: 400 });
+    }
+
+    if (alert_on_never_backed_up !== undefined && typeof alert_on_never_backed_up !== 'boolean') {
+      return NextResponse.json({ error: 'alert_on_never_backed_up must be a boolean' }, { status: 400 });
     }
 
     if (threshold_hours && (threshold_hours < 1 || threshold_hours > 168)) {
@@ -81,14 +85,18 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update configuration
+    const updateData: any = {
+      is_enabled,
+      updated_at: new Date().toISOString(),
+    };
+    
+    if (threshold_hours !== undefined) updateData.threshold_hours = threshold_hours;
+    if (email_recipients !== undefined) updateData.email_recipients = email_recipients;
+    if (alert_on_never_backed_up !== undefined) updateData.alert_on_never_backed_up = alert_on_never_backed_up;
+
     const { data: updatedConfig, error: updateError } = await supabaseAdmin
       .from('backup_monitoring_config')
-      .update({
-        is_enabled,
-        threshold_hours,
-        email_recipients,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', currentConfig.id)
       .select()
       .single();
