@@ -111,31 +111,31 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
                     <span className="text-purple-700 dark:text-purple-300">Admin</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 shadow-lg border-0 bg-white/95 backdrop-blur">
+                <DropdownMenuContent align="start" className="w-56 shadow-lg border-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur">
                   <DropdownMenuLabel className="text-purple-600 dark:text-purple-400 font-semibold">Status Page Admin</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="hover:bg-blue-50 dark:hover:bg-blue-950/50">
                     <a href="/dashboard/admin/incidents" className="cursor-pointer">
                       <AlertCircle className="mr-2 h-4 w-4 text-blue-500" />
-                      <span>Incidents</span>
+                      <span className="text-gray-700 dark:text-gray-300">Incidents</span>
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="hover:bg-green-50 dark:hover:bg-green-950/50">
                     <a href="/dashboard/admin/clients" className="cursor-pointer">
                       <Users className="mr-2 h-4 w-4 text-green-500" />
-                      <span>Clients & Subscribers</span>
+                      <span className="text-gray-700 dark:text-gray-300">Clients & Subscribers</span>
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="hover:bg-orange-50 dark:hover:bg-orange-950/50">
                     <a href="/dashboard/admin/regions" className="cursor-pointer">
                       <MapPin className="mr-2 h-4 w-4 text-orange-500" />
-                      <span>Regions</span>
+                      <span className="text-gray-700 dark:text-gray-300">Regions</span>
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="hover:bg-pink-50 dark:hover:bg-pink-950/50">
                     <a href="/dashboard/admin/config" className="cursor-pointer">
                       <Palette className="mr-2 h-4 w-4 text-pink-500" />
-                      <span>Configuration</span>
+                      <span className="text-gray-700 dark:text-gray-300">Configuration</span>
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -143,14 +143,14 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
                   <DropdownMenuItem asChild className="hover:bg-emerald-50 dark:hover:bg-emerald-950/50">
                     <a href="/dashboard/admin/backup-monitoring" className="cursor-pointer">
                       <Bell className="mr-2 h-4 w-4 text-emerald-500" />
-                      <span>Backup Monitoring</span>
+                      <span className="text-gray-700 dark:text-gray-300">Backup Monitoring</span>
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="hover:bg-gray-50 dark:hover:bg-gray-950/50">
                     <a href="/dashboard/admin/settings" className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4 text-gray-500" />
-                      <span>Settings</span>
+                      <span className="text-gray-700 dark:text-gray-300">Settings</span>
                     </a>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -192,7 +192,7 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 shadow-lg border-0 bg-white/95 backdrop-blur" align="end" forceMount>
+            <DropdownMenuContent className="w-64 shadow-lg border-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur" align="end" forceMount>
               <DropdownMenuLabel className="font-normal p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 rounded-t-lg">
                 <div className="flex flex-col space-y-2">
                   <p className="text-sm font-semibold leading-none text-gray-900 dark:text-gray-100">
@@ -210,13 +210,13 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
               <DropdownMenuItem asChild className="hover:bg-blue-50 dark:hover:bg-blue-950/50">
                 <a href="/profile" className="cursor-pointer flex items-center p-3">
                   <User className="mr-3 h-4 w-4 text-blue-500" />
-                  <span>Profile</span>
+                  <span className="text-gray-700 dark:text-gray-300">Profile</span>
                 </a>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="hover:bg-gray-50 dark:hover:bg-gray-950/50">
                 <a href="/settings" className="cursor-pointer flex items-center p-3">
                   <Settings className="mr-3 h-4 w-4 text-gray-500" />
-                  <span>Settings</span>
+                  <span className="text-gray-700 dark:text-gray-300">Settings</span>
                 </a>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -226,7 +226,7 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
                   className="flex w-full items-center p-3 text-red-600 dark:text-red-400 cursor-pointer"
                 >
                   <LogOut className="mr-3 h-4 w-4" />
-                  <span>Sign Out</span>
+                  <span className="text-red-600 dark:text-red-400">Sign Out</span>
                 </a>
               </DropdownMenuItem>
             </DropdownMenuContent>
