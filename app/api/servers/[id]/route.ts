@@ -49,7 +49,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, host_id, server_type, ip_address, current_status, metadata } = body;
+    const { name, host_id, current_status, metadata, bucket, fmserver_name, backup_monitoring_excluded } = body;
 
     // Get the current server state for comparison
     const { data: currentServer } = await supabaseAdmin
@@ -61,8 +61,9 @@ export async function PATCH(
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (host_id !== undefined) updateData.host_id = host_id;
-    if (server_type !== undefined) updateData.server_type = server_type;
-    if (ip_address !== undefined) updateData.ip_address = ip_address;
+    if (bucket !== undefined) updateData.bucket = bucket;
+    if (fmserver_name !== undefined) updateData.fmserver_name = fmserver_name;
+    if (backup_monitoring_excluded !== undefined) updateData.backup_monitoring_excluded = backup_monitoring_excluded;
     if (current_status !== undefined) {
       updateData.current_status = current_status;
       updateData.last_status_change = new Date().toISOString();

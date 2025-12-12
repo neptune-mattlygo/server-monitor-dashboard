@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, host_id, server_type, ip_address, current_status, metadata } = body;
+    const { name, host_id, current_status, metadata, bucket, fmserver_name } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -58,10 +58,10 @@ export async function POST(request: NextRequest) {
       .insert({
         name,
         host_id: host_id || null,
-        server_type: server_type || null,
-        ip_address: ip_address || null,
         current_status: current_status || 'up',
         metadata: metadata || {},
+        bucket: bucket || null,
+        fmserver_name: fmserver_name || null,
       })
       .select()
       .single();
