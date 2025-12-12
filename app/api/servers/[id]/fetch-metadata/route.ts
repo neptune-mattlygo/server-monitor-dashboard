@@ -105,11 +105,23 @@ export async function POST(
       console.error('FileMaker auth failed:', authResponse.status, errorText);
       return NextResponse.json({ 
         error: `FileMaker authentication failed: ${authResponse.status} ${authResponse.statusText}`,
-        details: errorText
+        details: errorText.length > 500 ? errorText.substring(0, 500) + '...' : errorText
       }, { status: 401 });
     }
 
-    const authData: any = await authResponse.json();
+    let authData: any;
+    const authText = await authResponse.text();
+    try {
+      console.log('FileMaker auth response text:', authText.substring(0, 200), '...');
+      authData = JSON.parse(authText);
+    } catch (jsonError) {
+      console.error('Failed to parse FileMaker auth response as JSON:', jsonError);
+      console.log('Full auth response:', authText);
+      return NextResponse.json({
+        error: 'FileMaker Server returned invalid JSON response',
+        details: `Response was: ${authText.length > 500 ? authText.substring(0, 500) + '...' : authText}`
+      }, { status: 500 });
+    }
     
     console.log('FileMaker auth response:', JSON.stringify(authData, null, 2));
     
@@ -142,11 +154,23 @@ export async function POST(
       console.error('FileMaker metadata fetch failed:', metadataResponse.status, errorText);
       return NextResponse.json({ 
         error: `Failed to fetch metadata: ${metadataResponse.status} ${metadataResponse.statusText}`,
-        details: errorText
+        details: errorText.length > 500 ? errorText.substring(0, 500) + '...' : errorText
       }, { status: metadataResponse.status });
     }
 
-    const metadata: any = await metadataResponse.json();
+    let metadata: any;
+    const metadataText = await metadataResponse.text();
+    try {
+      console.log('FileMaker metadata response text:', metadataText.substring(0, 200), '...');
+      metadata = JSON.parse(metadataText);
+    } catch (jsonError) {
+      console.error('Failed to parse FileMaker metadata response as JSON:', jsonError);
+      console.log('Full metadata response:', metadataText);
+      return NextResponse.json({
+        error: 'FileMaker Server returned invalid JSON response for metadata',
+        details: `Response was: ${metadataText.length > 500 ? metadataText.substring(0, 500) + '...' : metadataText}`
+      }, { status: 500 });
+    }
     
     console.log('FileMaker metadata received:', JSON.stringify(metadata, null, 2));
 
