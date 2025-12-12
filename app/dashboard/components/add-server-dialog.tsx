@@ -72,6 +72,29 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
         throw new Error(data.error || 'Failed to create server');
       }
 
+      const { server } = await response.json();
+
+      // Automatically fetch FileMaker metadata if credentials are provided
+      if (formData.admin_url && formData.admin_username && formData.admin_password && server?.id) {
+        console.log('Fetching FileMaker metadata for new server...');
+        try {
+          const metadataResponse = await fetch(`/api/servers/${server.id}/fetch-metadata`, {
+            method: 'POST',
+          });
+          
+          if (metadataResponse.ok) {
+            console.log('FileMaker metadata fetched successfully');
+          } else {
+            const metadataError = await metadataResponse.json();
+            console.warn('Failed to fetch metadata:', metadataError.error);
+            // Don't show error to user, metadata fetch is optional
+          }
+        } catch (metadataErr) {
+          console.warn('Error fetching metadata:', metadataErr);
+          // Don't show error to user, metadata fetch is optional
+        }
+      }
+
       router.refresh();
       onOpenChange(false);
       // Reset form
