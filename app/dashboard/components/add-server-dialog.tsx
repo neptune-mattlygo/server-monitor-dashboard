@@ -45,8 +45,6 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
   const [formData, setFormData] = useState({
     name: '',
     host_id: '',
-    server_type: '',
-    ip_address: '',
     current_status: 'up' as ServerStatus,
     bucket: '',
     fmserver_name: '',
@@ -77,8 +75,6 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
       setFormData({
         name: '',
         host_id: '',
-        server_type: '',
-        ip_address: '',
         current_status: 'up',
         bucket: '',
         fmserver_name: '',
@@ -137,26 +133,6 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="server_type">Server Type</Label>
-              <Input
-                id="server_type"
-                value={formData.server_type}
-                onChange={(e) => setFormData({ ...formData, server_type: e.target.value })}
-                placeholder="e.g., Web Server, Database, API"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="ip_address">IP Address</Label>
-              <Input
-                id="ip_address"
-                value={formData.ip_address}
-                onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })}
-                placeholder="e.g., 192.168.1.100"
-              />
             </div>
 
             <div className="grid gap-2">

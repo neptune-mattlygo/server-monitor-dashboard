@@ -33,8 +33,6 @@ interface Server {
   id: string;
   name: string;
   host_id: string | null;
-  server_type: string | null;
-  ip_address: string | null;
   current_status: ServerStatus;
   bucket?: string | null;
   backup_monitoring_excluded?: boolean;
@@ -152,27 +150,6 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="server_type">Server Type</Label>
-            <Input
-              id="server_type"
-              value={editedServer.server_type || ''}
-              onChange={(e) => setEditedServer({ ...editedServer, server_type: e.target.value })}
-              placeholder="Web Server, Database, API"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="ip_address">IP Address</Label>
-            <Input
-              id="ip_address"
-              value={editedServer.ip_address || ''}
-              onChange={(e) => setEditedServer({ ...editedServer, ip_address: e.target.value })}
-              placeholder="192.168.1.100"
-              className="font-mono"
-            />
           </div>
 
           <div className="grid gap-2">
