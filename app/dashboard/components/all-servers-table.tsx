@@ -148,6 +148,9 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
           name: updatedServer.name,
           host_id: updatedServer.host_id,
           current_status: updatedServer.current_status,
+          bucket: updatedServer.bucket,
+          fmserver_name: updatedServer.fmserver_name,
+          backup_monitoring_excluded: updatedServer.backup_monitoring_excluded,
         }),
       });
 
