@@ -2,17 +2,30 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { MetadataRefreshSettings } from '@/app/dashboard/components/metadata-refresh-settings';
 
 export default function AdminSettingsPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Settings</h1>
-          <p className="text-muted-foreground">
-            Configure system-wide settings and automation
-          </p>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => window.history.back()}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Admin Settings</h1>
+            <p className="text-muted-foreground">
+              Configure system-wide settings and automation
+            </p>
+          </div>
         </div>
 
         <Tabs defaultValue="metadata-refresh" className="space-y-4">
