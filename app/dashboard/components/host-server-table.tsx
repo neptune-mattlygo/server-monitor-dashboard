@@ -32,6 +32,8 @@ interface Server {
   host_id: string | null;
   current_status: ServerStatus;
   bucket?: string | null;
+  fmserver_name?: string | null;
+  backup_monitoring_excluded?: boolean;
   uptime_display?: string | null;
   last_backup?: {
     created_at: string;
