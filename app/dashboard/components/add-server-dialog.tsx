@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -52,6 +52,16 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
     admin_username: '',
     admin_password: '',
   });
+
+  // Auto-populate admin_url when server name changes
+  useEffect(() => {
+    if (formData.name && !formData.admin_url) {
+      setFormData(prev => ({
+        ...prev,
+        admin_url: `https://${formData.name}/admin-console`
+      }));
+    }
+  }, [formData.name]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
