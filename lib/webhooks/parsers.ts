@@ -26,14 +26,22 @@ export function parseUptimeRobotWebhook(payload: UptimeRobotPayload): ParsedWebh
 
 // Parse FileMaker Server webhook
 export function parseFileMakerWebhook(payload: FileMakerPayload): ParsedWebhookData {
+  // Determine status based on error field or event type
+  let status = 'info';
+  if (payload.error) {
+    status = 'error';
+  } else if (payload.event.toLowerCase().includes('error') || payload.event.toLowerCase().includes('security')) {
+    status = 'warning';
+  }
+
   return {
     serverName: payload.server,
     eventType: 'filemaker_event',
-    status: payload.severity.toLowerCase(),
-    message: payload.details,
+    status: status,
+    message: payload.message,
     metadata: {
       event: payload.event,
-      severity: payload.severity,
+      error: payload.error,
       timestamp: payload.timestamp,
       database: payload.database,
       client: payload.client,

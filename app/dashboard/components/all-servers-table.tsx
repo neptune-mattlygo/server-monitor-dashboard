@@ -201,18 +201,6 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
             >
               Host <SortIcon field="host_name" />
             </TableHead>
-            <TableHead 
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => handleSort('server_type')}
-            >
-              Server Type <SortIcon field="server_type" />
-            </TableHead>
-            <TableHead 
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => handleSort('ip_address')}
-            >
-              IP Address <SortIcon field="ip_address" />
-            </TableHead>
             <TableHead>Uptime</TableHead>
             <TableHead>Last Backup</TableHead>
             <TableHead>Database</TableHead>
@@ -288,10 +276,6 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                 </div>
               </TableCell>
               <TableCell>{server.host_name || '-'}</TableCell>
-              <TableCell>{server.server_type || '-'}</TableCell>
-              <TableCell className="font-mono text-sm">
-                {server.ip_address || '-'}
-              </TableCell>
               <TableCell className="text-sm">
                 {server.current_status === 'up' ? (
                   server.uptime_display || '-'

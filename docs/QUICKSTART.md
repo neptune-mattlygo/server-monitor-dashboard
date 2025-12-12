@@ -97,7 +97,7 @@ curl -X POST http://localhost:3000/api/webhooks/uptimerobot \
 curl -X POST http://localhost:3000/api/webhooks/filemaker \
   -H "Content-Type: application/json" \
   -H "X-Webhook-Secret: dMQyVLS1iJbShBRwpScdJSs0rkDd1Wne78jsJ/b3Vbc=" \
-  -d '{"event":"backup","server":"FM Server","status":"success","severity":"info","timestamp":"2024-12-01T10:00:00Z","details":"OK"}'
+  -d '{"event":"SECURITY","server":"FM Server","error":"1064","message":"Admin account locked due to too many incorrect sign-in attempts","timestamp":"2024-12-01 10:00:00.000 +0000"}'
 
 # Backup (server_name should match a server in your database)
 curl -X POST http://localhost:3000/api/webhooks/backup \

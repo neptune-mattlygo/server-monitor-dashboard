@@ -14,10 +14,10 @@ export interface UptimeRobotPayload {
 
 export interface FileMakerPayload {
   event: string;
-  severity: string;
-  timestamp: string;
   server: string;
-  details: string;
+  message: string;
+  timestamp: string;
+  error?: string;
   database?: string;
   client?: string;
 }
