@@ -23,15 +23,13 @@ import { useRouter } from 'next/navigation';
 import { Server as ServerIcon, MapPin, Globe, History, Edit, AlertTriangle } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
-type SortField = 'current_status' | 'name' | 'server_type' | 'ip_address';
+type SortField = 'current_status' | 'name';
 type SortDirection = 'asc' | 'desc';
 
 interface Server {
   id: string;
   name: string;
   host_id: string | null;
-  server_type: string | null;
-  ip_address: string | null;
   current_status: ServerStatus;
   bucket?: string | null;
   uptime_display?: string | null;
@@ -139,14 +137,6 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
           aValue = a.name?.toLowerCase() || '';
           bValue = b.name?.toLowerCase() || '';
           break;
-        case 'server_type':
-          aValue = a.server_type?.toLowerCase() || '';
-          bValue = b.server_type?.toLowerCase() || '';
-          break;
-        case 'ip_address':
-          aValue = a.ip_address || '';
-          bValue = b.ip_address || '';
-          break;
         default:
           return 0;
       }
@@ -179,8 +169,6 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
         body: JSON.stringify({
           name: updatedServer.name,
           host_id: updatedServer.host_id,
-          server_type: updatedServer.server_type,
-          ip_address: updatedServer.ip_address,
           current_status: updatedServer.current_status,
         }),
       });
