@@ -56,6 +56,7 @@ export default function AdminSettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
+      </div>
     </div>
   );
 }
