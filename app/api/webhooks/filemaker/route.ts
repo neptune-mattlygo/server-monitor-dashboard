@@ -33,25 +33,27 @@ export async function POST(request: NextRequest) {
     // Find server by fmserver_name first, then fallback to name
     let server = null;
     
-    // Try matching on fmserver_name first
-    const { data: serverByFMName } = await supabaseAdmin
-      .from('servers')
-      .select('id')
-      .eq('fmserver_name', parsedData.serverName)
-      .single();
-    
-    if (serverByFMName) {
-      server = serverByFMName;
-    } else {
-      // Fallback to matching on name
-      const { data: serverByName } = await supabaseAdmin
+    // Try matching on fmserver_name first (if not null/empty)
+    if (parsedData.serverName) {
+      const { data: serverByFMName } = await supabaseAdmin
         .from('servers')
         .select('id')
-        .eq('name', parsedData.serverName)
-        .single();
+        .eq('fmserver_name', parsedData.serverName)
+        .maybeSingle();
       
-      if (serverByName) {
-        server = serverByName;
+      if (serverByFMName) {
+        server = serverByFMName;
+      } else {
+        // Fallback to matching on name
+        const { data: serverByName } = await supabaseAdmin
+          .from('servers')
+          .select('id')
+          .eq('name', parsedData.serverName)
+          .maybeSingle();
+        
+        if (serverByName) {
+          server = serverByName;
+        }
       }
     }
 
