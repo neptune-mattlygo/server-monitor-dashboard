@@ -145,10 +145,10 @@ export async function POST(
     // Check if data is nested under 'response' or directly in root
     const metaData = metadata.response || metadata;
     
-    // Try various field name variations
-    const serverVersion = metaData.serverVersion || metaData.version || metaData.productVersion || metaData.PRODUCT_VERSION;
-    const serverName = metaData.serverName || metaData.name || metaData.SERVER_NAME;
-    const hostName = metaData.hostName || metaData.hostname || metaData.HOST_NAME;
+    // Try various field name variations (FileMaker uses PascalCase: ServerName, ServerVersion, etc.)
+    const serverVersion = metaData.ServerVersion || metaData.serverVersion || metaData.version || metaData.productVersion;
+    const serverName = metaData.ServerName || metaData.serverName || metaData.name;
+    const hostName = metaData.HostName || metaData.hostName || metaData.hostname || metaData.ServerIPAddress;
     
     if (serverVersion) {
       updateData.fm_server_version = serverVersion;
