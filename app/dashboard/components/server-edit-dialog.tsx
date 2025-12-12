@@ -35,6 +35,7 @@ interface Server {
   server_type: string | null;
   ip_address: string | null;
   current_status: ServerStatus;
+  bucket?: string | null;
 }
 
 interface ServerEditDialogProps {
@@ -169,6 +170,19 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
               placeholder="192.168.1.100"
               className="font-mono"
             />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="bucket">Backup Bucket Name</Label>
+            <Input
+              id="bucket"
+              value={editedServer.bucket || ''}
+              onChange={(e) => setEditedServer({ ...editedServer, bucket: e.target.value })}
+              placeholder="e.g., backup-ncdv"
+            />
+            <p className="text-xs text-muted-foreground">
+              AWS S3 bucket name for linking backup events
+            </p>
           </div>
 
           <div className="grid gap-2">
