@@ -318,7 +318,12 @@ export function ServerEventHistoryDialog({
                         Latest FileMaker Event
                       </h3>
                     </div>
-                    <p className="text-lg font-semibold text-purple-700 dark:text-purple-300">
+                    {data.lastFilemakerEvent.event_type && (
+                      <p className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-1">
+                        {data.lastFilemakerEvent.event_type}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       {formatDateTime(data.lastFilemakerEvent.created_at)}
                     </p>
                     {data.lastFilemakerEvent.message && (
@@ -340,6 +345,11 @@ export function ServerEventHistoryDialog({
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <Server className="h-4 w-4 text-purple-500" />
+                              {event.event_type && (
+                                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                  {event.event_type}
+                                </span>
+                              )}
                               <Badge variant="outline">
                                 {event.status || 'FileMaker Event'}
                               </Badge>

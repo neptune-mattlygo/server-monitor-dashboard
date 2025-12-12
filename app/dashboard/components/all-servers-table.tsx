@@ -50,6 +50,7 @@ interface Server {
     created_at: string;
     message?: string;
     status?: string;
+    event_type?: string;
   } | null;
 }
 
@@ -344,7 +345,10 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
               </TableCell>
               <TableCell className="text-sm text-gray-600">
                 {server.last_filemaker_event ? (
-                  <RelativeTime dateString={server.last_filemaker_event.created_at} />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{server.last_filemaker_event.event_type}</span>
+                    <RelativeTime dateString={server.last_filemaker_event.created_at} />
+                  </div>
                 ) : (
                   '-'
                 )}

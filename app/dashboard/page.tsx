@@ -102,7 +102,7 @@ async function getDashboardData() {
     // Get last FileMaker events
     const { data: lastFilemakerEvents } = await supabaseAdmin
       .from('server_events')
-      .select('server_id, created_at, message, status')
+      .select('server_id, created_at, message, status, event_type')
       .in('server_id', serverIds)
       .eq('event_type', 'filemaker_event')
       .order('created_at', { ascending: false });
