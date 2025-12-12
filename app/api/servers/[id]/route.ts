@@ -51,6 +51,8 @@ export async function PATCH(
     const body = await request.json();
     const { name, host_id, current_status, metadata, bucket, fmserver_name, backup_monitoring_excluded, admin_url, admin_username, admin_password } = body;
 
+    console.log('PATCH /api/servers/[id] - Received body:', { admin_url, admin_username, has_password: !!admin_password });
+
     // Get the current server state for comparison
     const { data: currentServer } = await supabaseAdmin
       .from('servers')
@@ -72,6 +74,8 @@ export async function PATCH(
       updateData.last_status_change = new Date().toISOString();
     }
     if (metadata !== undefined) updateData.metadata = metadata;
+
+    console.log('PATCH /api/servers/[id] - Update data:', updateData);
 
     const { data: server, error } = await supabaseAdmin
       .from('servers')
