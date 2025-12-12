@@ -20,7 +20,7 @@ import { ServerEditDialog } from './server-edit-dialog';
 import { ServerEventHistoryDialog } from './server-event-history-dialog';
 import { RelativeTime } from './relative-time';
 import { useRouter } from 'next/navigation';
-import { Server as ServerIcon, MapPin, Globe, ChevronUp, ChevronDown, History, Edit } from 'lucide-react';
+import { Server as ServerIcon, MapPin, Globe, ChevronUp, ChevronDown, History, Edit, AlertTriangle } from 'lucide-react';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 type SortField = 'current_status' | 'name' | 'server_type' | 'ip_address' | 'host_name';
@@ -33,6 +33,7 @@ interface Server {
   server_type: string | null;
   ip_address: string | null;
   current_status: ServerStatus;
+  bucket?: string | null;
   host_name?: string;
   host_region?: string | null;
   uptime_display?: string | null;
@@ -232,10 +233,11 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                 </Badge>
               </TableCell>
               <TableCell className="font-medium">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <span className="hover:underline">{server.name}</span>
-                  </HoverCardTrigger>
+                <div className="flex items-center gap-2">
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <span className="hover:underline">{server.name}</span>
+                    </HoverCardTrigger>
                   <HoverCardContent className="w-80">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
@@ -268,6 +270,22 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                     </div>
                   </HoverCardContent>
                 </HoverCard>
+                  {!server.bucket && (
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-60">
+                        <div className="space-y-1">
+                          <h4 className="font-semibold text-sm">Missing Backup Bucket</h4>
+                          <p className="text-xs text-muted-foreground">
+                            This server does not have a backup bucket configured. AWS S3 backup events will not be linked to this server.
+                          </p>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  )}
+                </div>
               </TableCell>
               <TableCell>{server.host_name || '-'}</TableCell>
               <TableCell>{server.server_type || '-'}</TableCell>
