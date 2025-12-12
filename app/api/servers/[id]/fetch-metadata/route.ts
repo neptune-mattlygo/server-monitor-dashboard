@@ -131,9 +131,9 @@ export async function POST(
       }, { status: metadataResponse.status });
     }
 
-    const metadata: FileMakerMetadata = await metadataResponse.json();
+    const metadata: any = await metadataResponse.json();
     
-    console.log('FileMaker metadata received:', metadata);
+    console.log('FileMaker metadata received:', JSON.stringify(metadata, null, 2));
 
     // Step 3: Update server record with metadata
     const updateData: any = {
@@ -141,16 +141,29 @@ export async function POST(
       fm_metadata_updated_at: new Date().toISOString(),
     };
 
-    // Extract common fields if available
-    if (metadata.serverVersion) {
-      updateData.fm_server_version = metadata.serverVersion;
+    // Extract common fields - try different possible structures
+    // Check if data is nested under 'response' or directly in root
+    const metaData = metadata.response || metadata;
+    
+    // Try various field name variations
+    const serverVersion = metaData.serverVersion || metaData.version || metaData.productVersion || metaData.PRODUCT_VERSION;
+    const serverName = metaData.serverName || metaData.name || metaData.SERVER_NAME;
+    const hostName = metaData.hostName || metaData.hostname || metaData.HOST_NAME;
+    
+    if (serverVersion) {
+      updateData.fm_server_version = serverVersion;
+      console.log('Extracted server version:', serverVersion);
     }
-    if (metadata.serverName) {
-      updateData.fmserver_name = metadata.serverName;
+    if (serverName) {
+      updateData.fmserver_name = serverName;
+      console.log('Extracted server name:', serverName);
     }
-    if (metadata.hostName) {
-      updateData.fm_host_name = metadata.hostName;
+    if (hostName) {
+      updateData.fm_host_name = hostName;
+      console.log('Extracted host name:', hostName);
     }
+    
+    console.log('Update data to be saved:', updateData);
 
     const { error: updateError } = await supabaseAdmin
       .from('servers')
