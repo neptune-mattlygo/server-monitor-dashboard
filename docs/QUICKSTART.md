@@ -93,7 +93,7 @@ curl -X POST http://localhost:3000/api/webhooks/uptimerobot \
   -H "X-Webhook-Secret: CcJlNnU6609i6PcGMp9oKiKcpY4xaCGuwNEfwAgq7uM=" \
   -d '{"monitorID":"123","monitorFriendlyName":"Test Server","alertTypeFriendlyName":"Up","monitorURL":"https://example.com","alertDetails":"Server online"}'
 
-# FileMaker
+# FileMaker (server name must match a server's "FileMaker Server Name" field or regular name)
 curl -X POST http://localhost:3000/api/webhooks/filemaker \
   -H "Content-Type: application/json" \
   -H "X-Webhook-Secret: dMQyVLS1iJbShBRwpScdJSs0rkDd1Wne78jsJ/b3Vbc=" \
