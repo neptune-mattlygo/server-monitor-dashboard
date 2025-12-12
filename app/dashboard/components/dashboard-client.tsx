@@ -274,73 +274,97 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
       )}
       
       {/* Summary Stats */}
-      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-lg ${statusFilter === 'all' ? 'ring-2 ring-gray-400' : ''}`}
+          className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl border-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-lg ${statusFilter === 'all' ? 'ring-2 ring-gray-400 shadow-2xl scale-105' : ''}`}
           onClick={() => handleFilterClick('all')}
         >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Servers</CardTitle>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Servers</CardTitle>
+            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg">
+              <Database className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.total}</div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{summary.total}</div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">All monitored servers</p>
           </CardContent>
         </Card>
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-lg ${statusFilter === 'up' ? 'ring-2 ring-green-500' : ''}`}
+          className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl border-0 bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-900/30 shadow-lg ${statusFilter === 'up' ? 'ring-2 ring-emerald-500 shadow-2xl scale-105' : ''}`}
           onClick={() => handleFilterClick('up')}
         >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-green-600">Online</CardTitle>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Online</CardTitle>
+            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg">
+              <div className="w-3 h-3 bg-white rounded-full"></div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.up}</div>
+            <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">{summary.up}</div>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Healthy & responsive</p>
           </CardContent>
         </Card>
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-lg ${statusFilter === 'down' ? 'ring-2 ring-red-500' : ''}`}
+          className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl border-0 bg-gradient-to-br from-red-50 to-rose-100 dark:from-red-900/30 dark:to-rose-900/30 shadow-lg ${statusFilter === 'down' ? 'ring-2 ring-red-500 shadow-2xl scale-105' : ''}`}
           onClick={() => handleFilterClick('down')}
         >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-red-600">Offline</CardTitle>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">Offline</CardTitle>
+            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg">
+              <div className="w-3 h-3 bg-white rounded-full"></div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.down}</div>
+            <div className="text-3xl font-bold text-red-700 dark:text-red-300">{summary.down}</div>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1">Needs attention</p>
           </CardContent>
         </Card>
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-lg ${statusFilter === 'degraded' ? 'ring-2 ring-yellow-500' : ''}`}
+          className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl border-0 bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 shadow-lg ${statusFilter === 'degraded' ? 'ring-2 ring-amber-500 shadow-2xl scale-105' : ''}`}
           onClick={() => handleFilterClick('degraded')}
         >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-yellow-600">Degraded</CardTitle>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-300">Degraded</CardTitle>
+            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-lg">
+              <div className="w-3 h-3 bg-white rounded-full"></div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.degraded}</div>
+            <div className="text-3xl font-bold text-amber-700 dark:text-amber-300">{summary.degraded}</div>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Partial issues</p>
           </CardContent>
         </Card>
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-lg ${statusFilter === 'maintenance' ? 'ring-2 ring-blue-500' : ''}`}
+          className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl border-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 shadow-lg ${statusFilter === 'maintenance' ? 'ring-2 ring-blue-500 shadow-2xl scale-105' : ''}`}
           onClick={() => handleFilterClick('maintenance')}
         >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-blue-600">Maintenance</CardTitle>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Maintenance</CardTitle>
+            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+              <div className="w-3 h-3 bg-white rounded-full"></div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.maintenance}</div>
+            <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">{summary.maintenance}</div>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Scheduled work</p>
+          </CardContent>
           </CardContent>
         </Card>
       </div>
 
       {/* Filter indicator */}
       {statusFilter !== 'all' && (
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Filtering by: <span className="font-semibold capitalize">{statusFilter}</span>
-          </span>
+        <div className="mb-6 flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200/50 dark:border-blue-700/50 rounded-lg shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-blue-700 dark:text-blue-300">
+              Filtering by: <span className="font-semibold capitalize px-2 py-1 bg-blue-100 dark:bg-blue-800 rounded-md">{statusFilter}</span>
+            </span>
+          </div>
           <button
             onClick={() => setStatusFilter('all')}
-            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
           >
             Clear filter
           </button>
@@ -349,14 +373,15 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
 
       {/* View Toggle and Action Buttons */}
       <TooltipProvider>
-        <div className="flex items-center justify-between mb-6 gap-4">
-          <div className="flex gap-2">
+        <div className="flex items-center justify-between mb-8 gap-4 p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 rounded-xl shadow-lg">
+          <div className="flex gap-3">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant={viewMode === 'grouped' ? 'default' : 'outline'}
                   size="icon"
                   onClick={() => setViewMode('grouped')}
+                  className={`transition-all duration-200 ${viewMode === 'grouped' ? 'bg-gradient-to-r from-blue-500 to-purple-600 shadow-md' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </Button>
@@ -372,6 +397,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                   variant={viewMode === 'all' ? 'default' : 'outline'}
                   size="icon"
                   onClick={() => setViewMode('all')}
+                  className={`transition-all duration-200 ${viewMode === 'all' ? 'bg-gradient-to-r from-blue-500 to-purple-600 shadow-md' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                 >
                   <List className="h-4 w-4" />
                 </Button>
@@ -390,7 +416,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                 placeholder="Search servers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-9 border-0 bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-500/30 transition-all duration-200"
               />
             </div>
           </div>
@@ -398,7 +424,10 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
           <div className="flex gap-3">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button onClick={() => setAddServerDialogOpen(true)} className="gap-2">
+              <Button 
+                onClick={() => setAddServerDialogOpen(true)} 
+                className="gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-lg hover:shadow-xl transition-all duration-200"
+              >
                 <Plus className="h-4 w-4" />
                 Add Server
               </Button>
@@ -410,7 +439,11 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" onClick={() => setAddHostDialogOpen(true)} className="gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setAddHostDialogOpen(true)} 
+                className="gap-2 border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200"
+              >
                 <Database className="h-4 w-4" />
                 Add Host
               </Button>
@@ -463,19 +496,19 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
             return (
               <Card 
                 key={host.id}
-                className={`transition-all ${isDragOver ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950' : ''}`}
+                className={`transition-all duration-300 border-0 shadow-lg hover:shadow-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm ${isDragOver ? 'ring-2 ring-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 shadow-2xl' : ''}`}
                 onDragOver={(e) => handleDragOver(e, host.id)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, host.id)}
               >
-                <CardHeader>
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200/50 dark:border-gray-600/50">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2 flex-1">
+                    <div className="flex items-center gap-3 flex-1">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => toggleHostCollapse(host.id)}
-                        className="h-8 w-8 shrink-0"
+                        className="h-8 w-8 shrink-0 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all duration-200"
                       >
                         {isCollapsed ? (
                           <ChevronRight className="h-4 w-4" />
@@ -483,16 +516,27 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                           <ChevronDown className="h-4 w-4" />
                         )}
                       </Button>
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {host.name}
-                          <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                            ({filteredHost.servers.length} {filteredHost.servers.length === 1 ? 'server' : 'servers'})
-                          </span>
-                        </CardTitle>
-                        {host.regions?.name && (
-                          <CardDescription>{host.regions.name}</CardDescription>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md">
+                          <Server className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="flex items-center gap-3 text-lg">
+                            {host.name}
+                            <div className="flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-gray-700/80 rounded-full shadow-sm border border-gray-200/50 dark:border-gray-600/50">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {filteredHost.servers.length} {filteredHost.servers.length === 1 ? 'server' : 'servers'}
+                              </span>
+                            </div>
+                          </CardTitle>
+                          {host.regions?.name && (
+                            <CardDescription className="flex items-center gap-2 mt-1">
+                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                              {host.regions.name}
+                            </CardDescription>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <Tooltip>
@@ -501,7 +545,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEditHost(host)}
-                          className="h-8 w-8"
+                          className="h-8 w-8 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all duration-200"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>

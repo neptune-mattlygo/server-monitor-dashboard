@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Activity } from 'lucide-react';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth/session';
 import { isAdmin } from '@/lib/auth/permissions';
@@ -206,10 +207,10 @@ export default async function DashboardPage() {
   const dashboardData = await getDashboardData();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <DashboardHeader user={user} isAdmin={userIsAdmin} />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-6 py-8">
         <Suspense fallback={<DashboardSkeleton />}>
           {dashboardData && (
             <DashboardClient 
@@ -220,12 +221,19 @@ export default async function DashboardPage() {
 
           {/* Recent Events */}
           {dashboardData?.recentEventCount !== undefined && dashboardData.recentEventCount > 0 && (
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>
-                  {dashboardData.recentEventCount} events in the last 24 hours
-                </CardDescription>
+            <Card className="mt-8 border-0 shadow-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/50 dark:to-green-950/50 border-b border-emerald-200/50 dark:border-emerald-700/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg shadow-md">
+                    <Activity className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-emerald-700 dark:text-emerald-300">Recent Activity</CardTitle>
+                    <CardDescription className="text-emerald-600 dark:text-emerald-400">
+                      {dashboardData.recentEventCount} events in the last 24 hours
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
             </Card>
           )}
