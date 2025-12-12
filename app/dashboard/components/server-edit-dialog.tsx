@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -40,6 +41,10 @@ interface Server {
   admin_url?: string | null;
   admin_username?: string | null;
   admin_password?: string | null;
+  fm_server_version?: string | null;
+  fm_host_name?: string | null;
+  fm_metadata_updated_at?: string | null;
+  fm_metadata?: any;
 }
 
 interface ServerEditDialogProps {
@@ -125,7 +130,14 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="metadata">FileMaker Metadata</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-4 mt-4">
+        <div className="grid gap-4">
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
               {error}
@@ -296,6 +308,57 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
             </div>
           </div>
         </div>
+          </TabsContent>
+
+          <TabsContent value="metadata" className="space-y-4 mt-4">
+            <div className="grid gap-4">
+              {editedServer.fm_metadata_updated_at ? (
+                <>
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <div className="text-sm text-green-800 dark:text-green-200">
+                      Last updated: {new Date(editedServer.fm_metadata_updated_at).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>FileMaker Server Name</Label>
+                    <div className="text-sm font-mono p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      {editedServer.fmserver_name || '-'}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Server Version</Label>
+                    <div className="text-sm font-mono p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      {editedServer.fm_server_version || '-'}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Host Name / IP Address</Label>
+                    <div className="text-sm font-mono p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      {editedServer.fm_host_name || '-'}
+                    </div>
+                  </div>
+
+                  {editedServer.fm_metadata && (
+                    <div className="grid gap-2">
+                      <Label>Full Metadata (JSON)</Label>
+                      <pre className="text-xs font-mono p-3 bg-gray-50 dark:bg-gray-800 rounded overflow-auto max-h-64">
+                        {JSON.stringify(editedServer.fm_metadata, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="mb-4">No metadata available</p>
+                  <p className="text-sm">Configure admin credentials on the General tab and click "Fetch Metadata" to retrieve FileMaker Server information.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button

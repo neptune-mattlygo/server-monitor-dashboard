@@ -37,6 +37,10 @@ interface Server {
   admin_url?: string | null;
   admin_username?: string | null;
   admin_password?: string | null;
+  fm_server_version?: string | null;
+  fm_host_name?: string | null;
+  fm_metadata_updated_at?: string | null;
+  fm_metadata?: any;
   host_name?: string;
   host_region?: string | null;
   uptime_display?: string | null;
