@@ -286,13 +286,14 @@ export function MetadataRefreshSettings() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 font-mono text-sm">
-            <div>EMAIL_HOST (e.g., smtp.gmail.com)</div>
-            <div>EMAIL_PORT (e.g., 587)</div>
-            <div>EMAIL_USER (your email username)</div>
-            <div>EMAIL_PASS (your email password/app password)</div>
-            <div>EMAIL_FROM (sender email address, optional)</div>
-            <div>CRON_SECRET (secure token for cron authentication)</div>
+            <div><strong>RESEND_API_KEY</strong> - Your Resend API key</div>
+            <div><strong>STATUS_PAGE_FROM_EMAIL</strong> - Verified sender email (e.g., admin@yourdomain.com)</div>
+            <div><strong>STATUS_PAGE_FROM_NAME</strong> - Sender name (e.g., "Server Monitor")</div>
+            <div><strong>CRON_SECRET</strong> - Secure token for cron authentication</div>
           </div>
+          <p className="text-sm text-muted-foreground mt-4">
+            📧 Make sure your sender email is verified in your Resend dashboard
+          </p>
         </CardContent>
       </Card>
     </div>
