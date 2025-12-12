@@ -49,6 +49,7 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
     ip_address: '',
     current_status: 'up' as ServerStatus,
     bucket: '',
+    fmserver_name: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,6 +81,7 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
         ip_address: '',
         current_status: 'up',
         bucket: '',
+        fmserver_name: '',
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -167,6 +169,19 @@ export function AddServerDialog({ open, onOpenChange, hosts }: AddServerDialogPr
               />
               <p className="text-xs text-muted-foreground">
                 AWS S3 bucket name for linking backup events
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="fmserver_name">FileMaker Server Name</Label>
+              <Input
+                id="fmserver_name"
+                value={formData.fmserver_name}
+                onChange={(e) => setFormData({ ...formData, fmserver_name: e.target.value })}
+                placeholder="e.g., FM Server Production"
+              />
+              <p className="text-xs text-muted-foreground">
+                Server name used in FileMaker webhook payloads (if different from server name)
               </p>
             </div>
 

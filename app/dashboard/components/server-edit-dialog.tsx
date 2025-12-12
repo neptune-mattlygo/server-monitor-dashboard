@@ -38,6 +38,7 @@ interface Server {
   current_status: ServerStatus;
   bucket?: string | null;
   backup_monitoring_excluded?: boolean;
+  fmserver_name?: string | null;
 }
 
 interface ServerEditDialogProps {
@@ -184,6 +185,19 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
             />
             <p className="text-xs text-muted-foreground">
               AWS S3 bucket name for linking backup events
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="fmserver_name">FileMaker Server Name</Label>
+            <Input
+              id="fmserver_name"
+              value={editedServer.fmserver_name || ''}
+              onChange={(e) => setEditedServer({ ...editedServer, fmserver_name: e.target.value })}
+              placeholder="e.g., FM Server Production"
+            />
+            <p className="text-xs text-muted-foreground">
+              Server name used in FileMaker webhook payloads (if different from server name)
             </p>
           </div>
 
