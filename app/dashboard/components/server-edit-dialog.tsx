@@ -226,10 +226,12 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
                       alert('Metadata fetched successfully! The page will refresh to show updates.');
                       window.location.reload();
                     } else {
-                      alert(`Failed to fetch metadata: ${data.error}`);
+                      console.error('Failed to fetch metadata:', data);
+                      alert(`Failed to fetch metadata: ${data.error}${data.details ? '\n\nDetails: ' + data.details : ''}`);
                     }
                   } catch (err) {
-                    alert('Failed to fetch metadata');
+                    console.error('Network error fetching metadata:', err);
+                    alert(`Failed to fetch metadata: ${err instanceof Error ? err.message : 'Unknown error'}`);
                   }
                 }}
                 disabled={!editedServer.admin_url || !editedServer.admin_username || !editedServer.admin_password}

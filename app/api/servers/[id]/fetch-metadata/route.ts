@@ -41,8 +41,18 @@ export async function POST(
     }
 
     if (!server.admin_url || !server.admin_username || !server.admin_password) {
+      console.log(`Missing credentials for server ${server.name}:`, {
+        admin_url: !!server.admin_url,
+        admin_username: !!server.admin_username,  
+        admin_password: !!server.admin_password
+      });
       return NextResponse.json({ 
-        error: 'Server credentials not configured. Please add admin URL, username, and password first.' 
+        error: 'Server credentials not configured. Please add admin URL, username, and password first.',
+        details: `Missing: ${[
+          !server.admin_url ? 'admin URL' : null,
+          !server.admin_username ? 'username' : null, 
+          !server.admin_password ? 'password' : null
+        ].filter(Boolean).join(', ')}`
       }, { status: 400 });
     }
 
