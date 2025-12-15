@@ -54,11 +54,20 @@ export async function sendBackupAlertEmail(
     const severityClass = overdueServers.length >= 5 ? 'critical' : 'warning';
     const severityEmoji = overdueServers.length >= 5 ? '🔴' : '⚠️';
 
-    // Sort servers by hours since backup (descending)
-    const sortedServers = [...overdueServers].sort((a, b) => {
-      if (a.hours_since_backup === null) return -1;
-      if (b.hours_since_backup === null) return 1;
-      return b.hours_since_backup - a.hours_since_backup;
+    // Group servers by host name and sort by server name
+    const serversByHost = overdueServers.reduce((acc, server) => {
+      const hostName = server.host?.name || 'Unknown Host';
+      if (!acc[hostName]) {
+        acc[hostName] = [];
+      }
+      acc[hostName].push(server);
+      return acc;
+    }, {} as Record<string, OverdueServer[]>);
+
+    // Sort hosts alphabetically, and servers within each host by name
+    const sortedHosts = Object.keys(serversByHost).sort();
+    sortedHosts.forEach(host => {
+      serversByHost[host].sort((a, b) => a.name.localeCompare(b.name));
     });
 
     const client = getResendClient();
@@ -68,7 +77,7 @@ export async function sendBackupAlertEmail(
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: recipients,
       subject: `${severityEmoji} Backup Alert: ${overdueServers.length} Server(s) Overdue`,
-      html: generateBackupAlertHTML(sortedServers, thresholdHours, severityClass),
+      html: generateBackupAlertHTML(serversByHost, sortedHosts, thresholdHours, severityClass, overdueServers.length),
     });
 
     return { success: true };
@@ -90,55 +99,68 @@ function formatFileSize(bytes: number | null): string {
 }
 
 function generateBackupAlertHTML(
-  servers: OverdueServer[],
+  serversByHost: Record<string, OverdueServer[]>,
+  sortedHosts: string[],
   thresholdHours: number,
-  severity: string
+  severity: string,
+  totalServerCount: number
 ): string {
-  const serversHTML = servers.map(server => {
-    const hostName = server.host?.name || 'Unknown Host';
-    const lastBackup = server.last_backup_at 
-      ? new Date(server.last_backup_at).toLocaleString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-      : 'Never';
-    
-    const hoursSince = server.hours_since_backup !== null
-      ? `${server.hours_since_backup}h ago`
-      : 'No backup recorded';
-
-    const statusClass = server.hours_since_backup === null 
-      ? 'status-critical'
-      : server.hours_since_backup > thresholdHours * 2
-      ? 'status-critical'
-      : 'status-warning';
-    
-    const fileSizeDisplay = formatFileSize(server.file_size);
-    const fileSizeClass = server.is_small_file ? 'status-warning' : '';
-    const fileSizeWarning = server.is_small_file ? ' ⚠️' : '';
-
-    return `
-      <tr class="server-row">
-        <td class="server-name">
-          <strong>${server.name}</strong>
-          <div class="server-host">${hostName}</div>
-          ${server.ip_address ? `<div class="server-ip">${server.ip_address}</div>` : ''}
-        </td>
-        <td class="server-backup">
-          ${server.last_backup_database || '-'}
-        </td>
-        <td class="server-time ${statusClass}">
-          <strong>${hoursSince}</strong>
-          <div class="last-backup-date">${lastBackup}</div>
-        </td>
-        <td class="server-size ${fileSizeClass}">
-          <strong>${fileSizeDisplay}${fileSizeWarning}</strong>
+  const serversHTML = sortedHosts.map(hostName => {
+    const hostServers = serversByHost[hostName];
+    const hostHeaderRow = `
+      <tr class="host-header-row">
+        <td colspan="4" class="host-header">
+          <strong>${hostName}</strong> <span class="host-server-count">(${hostServers.length} server${hostServers.length !== 1 ? 's' : ''})</span>
         </td>
       </tr>
     `;
+
+    const serverRows = hostServers.map(server => {
+      const lastBackup = server.last_backup_at 
+        ? new Date(server.last_backup_at).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : 'Never';
+      
+      const hoursSince = server.hours_since_backup !== null
+        ? `${server.hours_since_backup}h ago`
+        : 'No backup recorded';
+
+      const statusClass = server.hours_since_backup === null 
+        ? 'status-critical'
+        : server.hours_since_backup > thresholdHours * 2
+        ? 'status-critical'
+        : 'status-warning';
+      
+      const fileSizeDisplay = formatFileSize(server.file_size);
+      const fileSizeClass = server.is_small_file ? 'status-warning' : '';
+      const fileSizeWarning = server.is_small_file ? ' ⚠️' : '';
+
+      return `
+        <tr class="server-row">
+          <td class="server-name">
+            <strong>${server.name}</strong>
+            ${server.ip_address ? `<div class="server-ip">${server.ip_address}</div>` : ''}
+          </td>
+          <td class="server-backup">
+            ${server.last_backup_database || '-'}
+          </td>
+          <td class="server-time ${statusClass}">
+            <strong>${hoursSince}</strong>
+            <div class="last-backup-date">${lastBackup}</div>
+          </td>
+          <td class="server-size ${fileSizeClass}">
+            <strong>${fileSizeDisplay}${fileSizeWarning}</strong>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    return hostHeaderRow + serverRows;
   }).join('');
 
   return `
@@ -210,6 +232,21 @@ function generateBackupAlertHTML(
           color: #666;
           border-bottom: 2px solid #dee2e6;
         }
+        .host-header-row {
+          background: #f8f9fa;
+        }
+        .host-header {
+          padding: 12px;
+          font-size: 14px;
+          color: #333;
+          border-top: 2px solid #dee2e6;
+          border-bottom: 1px solid #dee2e6;
+        }
+        .host-server-count {
+          font-weight: normal;
+          font-size: 13px;
+          color: #666;
+        }
         .server-row td { 
           padding: 15px 12px; 
           border-bottom: 1px solid #e9ecef; 
@@ -217,16 +254,11 @@ function generateBackupAlertHTML(
         .server-name { 
           font-size: 15px;
         }
-        .server-host { 
-          font-size: 12px; 
-          color: #666; 
-          margin-top: 3px;
-        }
         .server-ip { 
           font-size: 11px; 
           color: #999; 
           font-family: 'Courier New', monospace;
-          margin-top: 2px;
+          margin-top: 3px;
         }
         .server-backup {
           font-family: 'Courier New', monospace;
@@ -281,7 +313,7 @@ function generateBackupAlertHTML(
         <div class="content">
           <div class="summary">
             <p>
-              <strong>${servers.length} server${servers.length !== 1 ? 's have' : ' has'} not been backed up within the last ${thresholdHours} hours.</strong>
+              <strong>${totalServerCount} server${totalServerCount !== 1 ? 's have' : ' has'} not been backed up within the last ${thresholdHours} hours.</strong>
               Immediate action may be required to ensure data protection.
             </p>
           </div>
