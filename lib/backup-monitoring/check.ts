@@ -112,11 +112,11 @@ export async function performBackupCheck() {
     };
   }
 
-  // Get latest backup event for each server (only .fmp12 files)
+  // Get latest backup event for each server (only .fmp12 files, include both direct backup events and S3 backup_added events)
   const { data: backupEvents, error: backupEventsError } = await supabaseAdmin
     .from('server_events')
     .select('server_id, created_at, backup_database, backup_event_type, backup_file_size, backup_file_size_alert_suppressed')
-    .eq('event_type', 'backup')
+    .or('event_type.eq.backup,event_type.eq.backup_added')
     .ilike('backup_database', '%.fmp12')
     .order('created_at', { ascending: false });
 
