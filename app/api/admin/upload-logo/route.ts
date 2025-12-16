@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
 import { supabaseAdmin } from '@/lib/supabase';
+
+const STORAGE_BUCKET = 'assets';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,17 +39,41 @@ export async function POST(request: NextRequest) {
     // Get file extension
     const extension = file.name.split('.').pop() || 'png';
     const fileName = `logo.${extension}`;
+    const filePath = `branding/${fileName}`;
 
-    // Save to public directory
-    const publicDir = join(process.cwd(), 'public');
-    
-    // Ensure public directory exists
-    if (!existsSync(publicDir)) {
-      await mkdir(publicDir, { recursive: true });
+    // Delete existing logo if present
+    const { data: existingLogo } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'logo')
+      .single();
+
+    if (existingLogo?.value?.path) {
+      await supabaseAdmin.storage
+        .from(STORAGE_BUCKET)
+        .remove([existingLogo.value.path]);
     }
 
-    const filePath = join(publicDir, fileName);
-    await writeFile(filePath, buffer);
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      return NextResponse.json(
+        { error: `Failed to upload to storage: ${uploadError.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(filePath);
 
     // Store logo info in database
     const { error: dbError } = await supabaseAdmin
@@ -59,7 +82,8 @@ export async function POST(request: NextRequest) {
         key: 'logo',
         value: {
           filename: fileName,
-          url: `/${fileName}`,
+          path: filePath,
+          url: publicUrl,
           uploadedAt: new Date().toISOString(),
         },
       }, {
@@ -68,13 +92,16 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('Failed to save logo info to database:', dbError);
-      // Continue anyway since file is saved
+      return NextResponse.json(
+        { error: `Database error: ${dbError.message}` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
       filename: fileName,
-      url: `/${fileName}`,
+      url: publicUrl,
     });
   } catch (error: any) {
     console.error('Error uploading logo:', error);
