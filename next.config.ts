@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Allow Azure AD domains
+  // Allow Azure AD and Supabase Storage domains
   images: {
     remotePatterns: [
       {
@@ -50,7 +50,12 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'login.microsoftonline.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
     ],
+    formats: ['image/avif', 'image/webp'],
   },
 };
 

@@ -52,16 +52,26 @@ export function LogoUploadSettings() {
         throw new Error(data.error || 'Failed to upload logo');
       }
 
+      // Add cache-busting to ensure new logo displays
+      const logoUrl = data.url.includes('?')
+        ? `${data.url}&t=${Date.now()}`
+        : `${data.url}?t=${Date.now()}`;
+      
       setLogo({
-        url: data.url,
+        url: logoUrl,
         filename: data.filename,
       });
-      setSuccess('Logo uploaded successfully!');
+      setSuccess('Logo uploaded successfully! Refresh the page to see it in the header.');
       
       // Clear file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      
+      // Trigger a page reload after a short delay to show the new logo
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err: any) {
       setError(err.message || 'Failed to upload logo');
     } finally {

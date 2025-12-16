@@ -63,14 +63,15 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             {logo ? (
-              <div className="relative h-10">
+              <div className="relative h-10 flex items-center">
                 <Image
                   src={logo.url}
                   alt="Site logo"
                   width={150}
                   height={40}
-                  className="h-10 w-auto object-contain"
+                  className="h-10 w-auto object-contain max-h-10"
                   priority
+                  unoptimized
                 />
               </div>
             ) : (
