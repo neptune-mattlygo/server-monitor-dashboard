@@ -30,6 +30,8 @@ import {
   ExternalLink,
   Bell
 } from 'lucide-react';
+import { useLogo } from '@/lib/hooks/use-logo';
+import Image from 'next/image';
 
 interface DashboardHeaderProps {
   user: {
@@ -42,6 +44,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps) {
   const pathname = usePathname();
+  const { logo } = useLogo();
   
   const initials = user.display_name
     ? user.display_name
@@ -59,15 +62,30 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
       <div className="container mx-auto flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-xl shadow-md">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Server Monitor
-              </h1>
-              <p className="text-xs text-muted-foreground">Real-time Dashboard</p>
-            </div>
+            {logo ? (
+              <div className="relative h-10">
+                <Image
+                  src={logo.url}
+                  alt="Site logo"
+                  width={150}
+                  height={40}
+                  className="h-10 w-auto object-contain"
+                  priority
+                />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-xl shadow-md">
+                  <Activity className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Server Monitor
+                  </h1>
+                  <p className="text-xs text-muted-foreground">Real-time Dashboard</p>
+                </div>
+              </>
+            )}
           </div>
           
           <Separator orientation="vertical" className="h-8" />

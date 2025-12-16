@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { MetadataRefreshSettings } from '@/app/dashboard/components/metadata-refresh-settings';
+import { LogoUploadSettings } from '@/app/dashboard/components/logo-upload-settings';
 
 export default function AdminSettingsPage() {
   return (
@@ -32,11 +33,16 @@ export default function AdminSettingsPage() {
         <Tabs defaultValue="metadata-refresh" className="space-y-4">
           <TabsList>
             <TabsTrigger value="metadata-refresh">Metadata Refresh</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="general">General</TabsTrigger>
           </TabsList>
 
           <TabsContent value="metadata-refresh">
             <MetadataRefreshSettings />
+          </TabsContent>
+
+          <TabsContent value="branding">
+            <LogoUploadSettings />
           </TabsContent>
 
           <TabsContent value="general">
