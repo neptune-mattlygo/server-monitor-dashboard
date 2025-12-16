@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { CheckCircle2, AlertCircle, AlertTriangle, Clock, Mail } from 'lucide-react';
+import { useLogo } from '@/lib/hooks/use-logo';
+import Image from 'next/image';
 
 interface StatusData {
   status: 'operational' | 'degraded' | 'outage' | 'maintenance';
@@ -43,6 +45,7 @@ export function StatusPageClient() {
   const [subscribeForm, setSubscribeForm] = useState({ name: '', email: '', company: '' });
   const [subscribeMessage, setSubscribeMessage] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { logo } = useLogo();
 
   useEffect(() => {
     fetchStatus();
@@ -169,7 +172,20 @@ export function StatusPageClient() {
         <div className="container mx-auto px-4 py-6 max-w-5xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {data.config.logo_url && (
+              {/* Use uploaded logo first, then fall back to config logo */}
+              {logo ? (
+                <div className="relative h-10 flex items-center">
+                  <Image
+                    src={logo.url}
+                    alt={data.config.company_name}
+                    width={150}
+                    height={40}
+                    className="h-10 w-auto object-contain max-h-10"
+                    priority
+                    unoptimized
+                  />
+                </div>
+              ) : data.config.logo_url ? (
                 <>
                   <img
                     src={data.config.logo_url}
@@ -182,10 +198,10 @@ export function StatusPageClient() {
                     className="h-10 w-auto object-contain hidden dark:block"
                   />
                 </>
-              )}
+              ) : null}
             </div>
             <div className="flex-1 text-center">
-              {!data.config.logo_url && (
+              {!logo && !data.config.logo_url && (
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{data.config.company_name}</h1>
               )}
               <p className="text-gray-600 dark:text-gray-400 mt-1">System Status</p>
