@@ -157,9 +157,7 @@ export function ServerEventHistoryDialog({
             <Skeleton className="h-64 w-full" />
           </div>
         ) : data ? (
-          <Tabs defaultValue="status" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="status"> onValueChange={setActiveTab}>
+          <Tabs defaultValue="status" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="status">
                 <TrendingUp className="h-4 w-4 mr-2" />
@@ -251,12 +249,12 @@ export function ServerEventHistoryDialog({
                   </p>
                 )}
                 {data.pagination?.status && (
-                  <PaginationControls
-                    page={data.pagination.status.page}
-                   LoadMoreButton
+                  <LoadMoreButton
                     tab="status"
                     page={data.pagination.status.page}
-                    totalPages={data.pagination.status.totalPages
+                    totalPages={data.pagination.status.totalPages}
+                  />
+                )}
               </TabsContent>
 
               {/* S3 Events Tab */}
