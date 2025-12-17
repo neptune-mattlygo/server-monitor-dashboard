@@ -45,21 +45,33 @@ export function ServerEventHistoryDialog({
   onOpenChange,
 }: ServerEventHistoryDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [data, setData] = useState<any>(null);
   const [statusPage, setStatusPage] = useState(1);
   const [s3Page, setS3Page] = useState(1);
   const [filemakerPage, setFilemakerPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('status');
 
   useEffect(() => {
     if (open && serverId) {
-      fetchEventHistory();
+      // Reset pages when dialog opens
+      setStatusPage(1);
+      setS3Page(1);
+      setFilemakerPage(1);
+      setData(null);
+      fetchEventHistory(true);
     }
-  }, [open, serverId, statusPage, s3Page, filemakerPage]);
+  }, [open, serverId]);
 
-  const fetchEventHistory = async () => {
+  const fetchEventHistory = async (isInitial = false) => {
     if (!serverId) return;
 
-    setLoading(true);
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
       const params = new URLSearchParams({
         statusPage: statusPage.toString(),
@@ -69,35 +81,62 @@ export function ServerEventHistoryDialog({
       const response = await fetch(`/api/servers/${serverId}/summary?${params}`);
       if (!response.ok) throw new Error('Failed to fetch event history');
       const result = await response.json();
-      setData(result);
+      
+      if (isInitial || !data) {
+        setData(result);
+      } else {
+        // Append new data to existing data
+        setData({
+          ...result,
+          events: {
+            status: [...(data.events.status || []), ...(result.events.status || [])],
+            s3: [...(data.events.s3 || []), ...(result.events.s3 || [])],
+            filemaker: [...(data.events.filemaker || []), ...(result.events.filemaker || [])],
+            backups: result.events.backups,
+          },
+          pagination: result.pagination,
+        });
+      }
     } catch (error) {
       console.error('Error fetching event history:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'up':
-        return 'text-green-600';
-      case 'down':
-        return 'text-red-600';
-      case 'degraded':
-        return 'text-yellow-600';
-      case 'maintenance':
-        return 'text-blue-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
-
-  const PaginationControls = ({ 
+  };LoadMoreButton = ({ 
+    tab,
     page, 
+    totalPages, 
+  }: { 
+    tab: 'status' | 's3' | 'filemaker';
+    page: number; 
+    totalPages: number; 
+  }) => {
+    if (page >= totalPages) return null;
+
+    return (
+      <div className="flex items-center justify-center pt-4 border-t">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => loadMore(tab)}
+          disabled={loadingMore}
+        >
+          {loadingMore ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100 mr-2" />
+              Loading...
+            </>
+          ) : (
+            <>
+              Load More
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </>
+          )}
+        </Button>
+        <span className="text-sm text-gray-600 dark:text-gray-400 ml-4">
+          Page {page} of {totalPages}
+        </span
     totalPages, 
     onPageChange 
   }: { 
@@ -154,6 +193,8 @@ export function ServerEventHistoryDialog({
         ) : data ? (
           <Tabs defaultValue="status" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="status"> onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="status">
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Status History
@@ -168,9 +209,7 @@ export function ServerEventHistoryDialog({
               </TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="h-[500px] mt-4">
-              {/* Status History Tab */}
-              <TabsContent value="status" className="space-y-4">
+            <ScrollArea className="h-[500px] mt-4" key={activeTab}e="space-y-4">
                 {data.uptime && data.server.current_status === 'up' && (
                   <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -248,10 +287,10 @@ export function ServerEventHistoryDialog({
                 {data.pagination?.status && (
                   <PaginationControls
                     page={data.pagination.status.page}
-                    totalPages={data.pagination.status.totalPages}
-                    onPageChange={setStatusPage}
-                  />
-                )}
+                   LoadMoreButton
+                    tab="status"
+                    page={data.pagination.status.page}
+                    totalPages={data.pagination.status.totalPages
               </TabsContent>
 
               {/* S3 Events Tab */}
@@ -363,10 +402,10 @@ export function ServerEventHistoryDialog({
                   </p>
                 )}
                 {data.pagination?.s3 && (
-                  <PaginationControls
+                  <LoadMoreButton
+                    tab="s3"
                     page={data.pagination.s3.page}
                     totalPages={data.pagination.s3.totalPages}
-                    onPageChange={setS3Page}
                   />
                 )}
               </TabsContent>
@@ -436,10 +475,10 @@ export function ServerEventHistoryDialog({
                   </p>
                 )}
                 {data.pagination?.filemaker && (
-                  <PaginationControls
+                  <LoadMoreButton
+                    tab="filemaker"
                     page={data.pagination.filemaker.page}
                     totalPages={data.pagination.filemaker.totalPages}
-                    onPageChange={setFilemakerPage}
                   />
                 )}
               </TabsContent>
