@@ -43,8 +43,6 @@ supabase/.branches
 supabase/seed.sql
 
 # test scripts (may contain secrets)
-test-*.sh
-*.test.sh
 
 # IDE
 .vscode/*
@@ -56,3 +54,7 @@ test-*.sh
 *.swp
 *.swo
 *~
+
+# test scripts (may contain secrets)
+scripts/test-*.sh
+scripts/*.test.sh
