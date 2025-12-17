@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, Database, Server, TrendingUp, TrendingDown, Cloud, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, getStatusColor } from '@/lib/utils';
 
 interface EventData {
   id: string;
