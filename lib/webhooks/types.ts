@@ -1,13 +1,13 @@
 // Webhook payload type definitions
 
 export interface UptimeRobotPayload {
-  monitorID: string;
-  monitorURL: string;
-  monitorFriendlyName: string;
-  alertType: string;
-  alertTypeFriendlyName: string;
-  alertDetails: string;
-  monitorAlertContacts: string;
+  monitorID?: string;
+  monitorURL?: string;
+  monitorFriendlyName?: string;
+  alertType?: string;
+  alertTypeFriendlyName?: string;
+  alertDetails?: string;
+  monitorAlertContacts?: string;
   sslExpiryDate?: string;
   sslExpiryDaysLeft?: string;
   // Email body support for n8n forwarding

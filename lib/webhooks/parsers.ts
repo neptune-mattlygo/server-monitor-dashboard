@@ -93,14 +93,18 @@ export function parseUptimeRobotWebhook(payload: UptimeRobotPayload): ParsedWebh
     return parseUptimeRobotEmail(payload.emailBody, payload.emailSubject);
   }
   
-  // Standard JSON payload parsing
+  // Standard JSON payload parsing - validate required fields
+  if (!payload.alertTypeFriendlyName || !payload.monitorFriendlyName) {
+    throw new Error('Missing required fields: alertTypeFriendlyName and monitorFriendlyName are required for JSON payload');
+  }
+  
   const status = payload.alertTypeFriendlyName.toLowerCase();
   
   return {
     serverName: payload.monitorFriendlyName,
     eventType: 'status_change',
     status: status === 'up' ? 'up' : 'down',
-    message: `${payload.alertTypeFriendlyName}: ${payload.alertDetails || payload.monitorURL}`,
+    message: `${payload.alertTypeFriendlyName}: ${payload.alertDetails || payload.monitorURL || 'No details'}`,
     metadata: {
       monitorId: payload.monitorID,
       url: payload.monitorURL,
