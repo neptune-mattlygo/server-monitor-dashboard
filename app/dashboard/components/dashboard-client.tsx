@@ -607,8 +607,8 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
 
       {/* All Servers View */}
       {viewMode === 'all' && (
-        <Card>
-          <CardHeader>
+        <Card className="border-0 shadow-lg hover:shadow-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200/50 dark:border-gray-600/50">
             <CardTitle>All Servers</CardTitle>
             <CardDescription>
               Complete list of all monitored servers

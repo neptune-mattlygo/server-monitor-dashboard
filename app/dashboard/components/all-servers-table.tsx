@@ -20,7 +20,8 @@ import { ServerEditDialog } from './server-edit-dialog';
 import { ServerEventHistoryDialog } from './server-event-history-dialog';
 import { RelativeTime } from './relative-time';
 import { useRouter } from 'next/navigation';
-import { Server as ServerIcon, MapPin, Globe, ChevronUp, ChevronDown, History, Edit, AlertTriangle } from 'lucide-react';
+import { Server as ServerIcon, MapPin, Globe, ChevronUp, ChevronDown, History, Edit, AlertTriangle, ExternalLink } from 'lucide-react';
+import Image from 'next/image';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 type SortField = 'current_status' | 'name' | 'host_name';
@@ -135,11 +136,11 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
 
   const getStatusIcon = (status: ServerStatus) => {
     switch (status) {
-      case 'up': return '✓';
-      case 'down': return '✗';
-      case 'degraded': return '⚠';
-      case 'maintenance': return '🔧';
-      default: return '?';
+      case 'up': return '●';
+      case 'down': return '●';
+      case 'degraded': return '●';
+      case 'maintenance': return '●';
+      default: return '○';
     }
   };
 
@@ -188,7 +189,7 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
         <TableHeader>
           <TableRow>
             <TableHead 
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 w-[120px]"
               onClick={() => handleSort('current_status')}
             >
               Status <SortIcon field="current_status" />
@@ -200,27 +201,27 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
               Server Name <SortIcon field="name" />
             </TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 w-[150px]"
               onClick={() => handleSort('host_name')}
             >
               Host <SortIcon field="host_name" />
             </TableHead>
-            <TableHead>Uptime</TableHead>
-            <TableHead>Last Backup</TableHead>
-            <TableHead>Database</TableHead>
-            <TableHead>Last FileMaker Event</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            <TableHead className="w-[80px]">Uptime</TableHead>
+            <TableHead className="w-[100px]">Last Backup</TableHead>
+            <TableHead className="w-[150px]">Database</TableHead>
+            <TableHead className="w-[120px]">Last FileMaker Event</TableHead>
+            <TableHead className="w-[120px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedServers.map((server) => (
             <TableRow 
               key={server.id}
-              onClick={() => handleRowClick(server)}
-              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+              onDoubleClick={() => handleRowClick(server)}
+              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
-              <TableCell>
-                <Badge variant={getStatusBadgeVariant(server.current_status)} style={{ minWidth: '100px' }}>
+              <TableCell className="w-[120px]">
+                <Badge variant={getStatusBadgeVariant(server.current_status)}>
                   {getStatusIcon(server.current_status)} {server.current_status}
                 </Badge>
               </TableCell>
@@ -350,7 +351,7 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                   '-'
                 )}
               </TableCell>
-              <TableCell className="text-sm font-mono text-xs">
+              <TableCell className="text-sm font-mono text-xs truncate max-w-[150px]">
                 {server.last_backup?.backup_database || '-'}
               </TableCell>
               <TableCell className="text-sm text-gray-600">
@@ -365,6 +366,34 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
               </TableCell>
               <TableCell>
                 <div className="flex gap-1">
+                  {/* FMS Admin Console Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const url = `https://${server.name}/admin-console`;
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    }}
+                    title="Open FMS Admin Console"
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    <ServerIcon className="h-4 w-4" />
+                  </Button>
+                  {/* Otto Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const url = `https://${server.name}/otto`;
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    }}
+                    title="Open Otto"
+                    className="text-purple-600 hover:text-purple-700 dark:text-purple-400"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
