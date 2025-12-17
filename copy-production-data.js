@@ -1,9 +1,10 @@
+require('dotenv').config({ path: '.env.local' });
 const { createClient } = require('@supabase/supabase-js');
 
-// Production Supabase
+// Production Supabase - credentials from environment variables
 const prodSupabase = createClient(
-  'https://kwwqylugttzcwgxoamdw.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3d3F5bHVndHR6Y3dneG9hbWR3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDk0NjAzMCwiZXhwIjoyMDgwNTIyMDMwfQ.nsAO3w-sItLq2U33AsGKJWLfM-W9dvFyXxt5_Teqnl4'
+  process.env.PROD_SUPABASE_URL || 'https://kwwqylugttzcwgxoamdw.supabase.co',
+  process.env.PROD_SUPABASE_SERVICE_ROLE_KEY
 );
 
 // Local Supabase
