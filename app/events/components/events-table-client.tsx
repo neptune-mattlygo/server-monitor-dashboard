@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -20,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -101,13 +100,10 @@ function SortIcon({ field, currentField, direction }: { field: SortField; curren
 
 interface EventsTableClientProps {
   events: ServerEvent[];
-  currentPage: number;
-  totalPages: number;
   totalEvents: number;
 }
 
-export function EventsTableClient({ events, currentPage, totalPages, totalEvents }: EventsTableClientProps) {
-  const router = useRouter();
+export function EventsTableClient({ events, totalEvents }: EventsTableClientProps) {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchTerm, setSearchTerm] = useState('');
@@ -115,15 +111,6 @@ export function EventsTableClient({ events, currentPage, totalPages, totalEvents
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<ServerEvent | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      router.refresh();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [router]);
 
   // Get unique event types and statuses for filters
   const eventTypes = useMemo(() => {
@@ -541,41 +528,6 @@ export function EventsTableClient({ events, currentPage, totalPages, totalEvents
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 px-2">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Page {currentPage} of {totalPages} ({totalEvents.toLocaleString()} total events)
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => {
-                const url = new URL(window.location.href);
-                url.searchParams.set('page', String(currentPage - 1));
-                window.location.href = url.toString();
-              }}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => {
-                const url = new URL(window.location.href);
-                url.searchParams.set('page', String(currentPage + 1));
-                window.location.href = url.toString();
-              }}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
-      
       {/* Event Details Dialog */}
       <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
