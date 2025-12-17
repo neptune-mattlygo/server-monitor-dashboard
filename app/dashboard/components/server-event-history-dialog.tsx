@@ -103,7 +103,22 @@ export function ServerEventHistoryDialog({
       setLoading(false);
       setLoadingMore(false);
     }
-  };LoadMoreButton = ({ 
+  };
+
+  const loadMore = (tab: 'status' | 's3' | 'filemaker') => {
+    if (tab === 'status' && data?.pagination?.status?.page < data?.pagination?.status?.totalPages) {
+      setStatusPage(prev => prev + 1);
+      setTimeout(() => fetchEventHistory(false), 0);
+    } else if (tab === 's3' && data?.pagination?.s3?.page < data?.pagination?.s3?.totalPages) {
+      setS3Page(prev => prev + 1);
+      setTimeout(() => fetchEventHistory(false), 0);
+    } else if (tab === 'filemaker' && data?.pagination?.filemaker?.page < data?.pagination?.filemaker?.totalPages) {
+      setFilemakerPage(prev => prev + 1);
+      setTimeout(() => fetchEventHistory(false), 0);
+    }
+  };
+
+  const LoadMoreButton = ({ 
     tab,
     page, 
     totalPages, 
@@ -173,7 +188,9 @@ export function ServerEventHistoryDialog({
               </TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="h-[500px] mt-4" key={activeTab}e="space-y-4">
+            <ScrollArea className="h-[500px] mt-4" key={activeTab}>
+              {/* Status History Tab */}
+              <TabsContent value="status" className="space-y-4">
                 {data.uptime && data.server.current_status === 'up' && (
                   <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
                     <div className="flex items-center gap-2 mb-2">
