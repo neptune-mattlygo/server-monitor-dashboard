@@ -20,7 +20,7 @@ import { ServerEditDialog } from './server-edit-dialog';
 import { ServerEventHistoryDialog } from './server-event-history-dialog';
 import { RelativeTime } from './relative-time';
 import { useRouter } from 'next/navigation';
-import { Server as ServerIcon, MapPin, Globe, ChevronUp, ChevronDown, History, Edit, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Server as ServerIcon, MapPin, Globe, ChevronUp, ChevronDown, History, Edit, AlertTriangle, ExternalLink, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
@@ -273,6 +273,21 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                           <h4 className="font-semibold text-sm">Missing Backup Bucket</h4>
                           <p className="text-xs text-muted-foreground">
                             This server does not have a backup bucket configured. AWS S3 backup events will not be linked to this server.
+                          </p>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  )}
+                  {server.backup_monitoring_excluded && (
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <EyeOff className="h-4 w-4 text-gray-500 cursor-help" />
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-60">
+                        <div className="space-y-1">
+                          <h4 className="font-semibold text-sm">Backup Monitoring Disabled</h4>
+                          <p className="text-xs text-muted-foreground">
+                            Backup monitoring is disabled for this server. No backup alerts will be generated.
                           </p>
                         </div>
                       </HoverCardContent>
