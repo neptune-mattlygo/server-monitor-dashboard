@@ -42,6 +42,10 @@ supabase/.temp
 supabase/.branches
 supabase/seed.sql
 
+# test scripts (may contain secrets)
+test-*.sh
+*.test.sh
+
 # IDE
 .vscode/*
 !.vscode/settings.json
