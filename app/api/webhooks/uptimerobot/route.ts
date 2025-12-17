@@ -34,6 +34,14 @@ export async function POST(request: NextRequest) {
 
     // Parse webhook payload
     const payload: UptimeRobotPayload = await request.json();
+    
+    // Log incoming payload for debugging
+    console.log('UptimeRobot webhook received:', {
+      hasEmailBody: !!payload.emailBody,
+      hasEmailSubject: !!payload.emailSubject,
+      hasMonitorID: !!payload.monitorID,
+    });
+    
     const parsedData = parseUptimeRobotWebhook(payload);
 
     // Find or create server by name

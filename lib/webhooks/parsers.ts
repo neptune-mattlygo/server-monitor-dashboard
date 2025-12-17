@@ -6,8 +6,94 @@ import type {
   ParsedWebhookData,
 } from './types';
 
-// Parse UptimeRobot webhook
+// Parse UptimeRobot email body (from n8n forwarding)
+export function parseUptimeRobotEmail(emailBody: string, emailSubject?: string): ParsedWebhookData {
+  // Extract monitor name from subject line: "Monitor is DOWN: server-name" or "Monitor is UP: server-name"
+  let monitorName = 'Unknown Monitor';
+  let status: 'up' | 'down' = 'down';
+  let alertType = 'down';
+  
+  if (emailSubject) {
+    const subjectMatch = emailSubject.match(/Monitor is\s+(UP|DOWN):\s*(.+)/i);
+    if (subjectMatch) {
+      alertType = subjectMatch[1].toUpperCase();
+      status = alertType === 'UP' ? 'up' : 'down';
+      monitorName = subjectMatch[2].trim();
+    }
+  }
+  
+  // Also try to extract from body if subject parsing failed
+  if (monitorName === 'Unknown Monitor') {
+    // Look for "Monitor name" followed by the name
+    const nameMatch = emailBody.match(/Monitor name[\s\n]*([^\n<]+)/i);
+    if (nameMatch) {
+      monitorName = nameMatch[1].trim();
+    }
+    
+    // Try to extract from "[name] is down" or "[name] is up" in body
+    const bodyStatusMatch = emailBody.match(/([^\s]+(?:\.[^\s]+)*?)\s+is\s+(down|up)/i);
+    if (bodyStatusMatch) {
+      monitorName = bodyStatusMatch[1].trim();
+      status = bodyStatusMatch[2].toLowerCase() as 'up' | 'down';
+      alertType = status.toUpperCase();
+    }
+  }
+  
+  // Extract checked URL
+  let monitorURL = '';
+  const urlMatch = emailBody.match(/Checked URL[\s\n]*(?:<[^>]*>)?([^\n<]+)/i);
+  if (urlMatch) {
+    monitorURL = urlMatch[1].trim();
+  }
+  
+  // Extract root cause/alert details
+  let alertDetails = '';
+  const rootCauseMatch = emailBody.match(/Root cause[\s\n]*(?:<[^>]*>)?([^\n<]+)/i);
+  if (rootCauseMatch) {
+    alertDetails = rootCauseMatch[1].trim();
+  }
+  
+  // Extract incident timestamp
+  let incidentTime = '';
+  const timeMatch = emailBody.match(/Incident (?:started|resolved) at[\s\n]*(?:<[^>]*>)?([^\n<]+)/i);
+  if (timeMatch) {
+    incidentTime = timeMatch[1].trim();
+  }
+  
+  // Extract region
+  let region = '';
+  const regionMatch = emailBody.match(/Region[\s\n]*(?:<[^>]*>)?([^\n<]+)/i);
+  if (regionMatch) {
+    region = regionMatch[1].trim();
+  }
+  
+  const message = alertDetails 
+    ? `${alertType}: ${alertDetails}` 
+    : `${alertType}: ${monitorURL || monitorName}`;
+  
+  return {
+    serverName: monitorName,
+    eventType: 'status_change',
+    status,
+    message,
+    metadata: {
+      url: monitorURL,
+      alertDetails,
+      incidentTime,
+      region,
+      source: 'email',
+    },
+  };
+}
+
+// Parse UptimeRobot webhook (JSON payload or email)
 export function parseUptimeRobotWebhook(payload: UptimeRobotPayload): ParsedWebhookData {
+  // Check if this is an email-based payload
+  if (payload.emailBody) {
+    return parseUptimeRobotEmail(payload.emailBody, payload.emailSubject);
+  }
+  
+  // Standard JSON payload parsing
   const status = payload.alertTypeFriendlyName.toLowerCase();
   
   return {
@@ -20,6 +106,7 @@ export function parseUptimeRobotWebhook(payload: UptimeRobotPayload): ParsedWebh
       url: payload.monitorURL,
       sslExpiryDate: payload.sslExpiryDate,
       sslExpiryDaysLeft: payload.sslExpiryDaysLeft,
+      source: 'json',
     },
   };
 }

@@ -10,6 +10,9 @@ export interface UptimeRobotPayload {
   monitorAlertContacts: string;
   sslExpiryDate?: string;
   sslExpiryDaysLeft?: string;
+  // Email body support for n8n forwarding
+  emailBody?: string;
+  emailSubject?: string;
 }
 
 export interface FileMakerPayload {

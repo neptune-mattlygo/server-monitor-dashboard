@@ -87,11 +87,17 @@ npm run type-check
 ## 🧪 Test Webhook
 
 ```bash
-# UptimeRobot (use actual secret from .env.local)
+# UptimeRobot - Standard JSON (use actual secret from .env.local)
 curl -X POST http://localhost:3000/api/webhooks/uptimerobot \
   -H "Content-Type: application/json" \
   -H "X-Webhook-Secret: CcJlNnU6609i6PcGMp9oKiKcpY4xaCGuwNEfwAgq7uM=" \
   -d '{"monitorID":"123","monitorFriendlyName":"Test Server","alertTypeFriendlyName":"Up","monitorURL":"https://example.com","alertDetails":"Server online"}'
+
+# UptimeRobot - Email Format (forwarded via n8n)
+curl -X POST http://localhost:3000/api/webhooks/uptimerobot \
+  -H "Content-Type: application/json" \
+  -H "X-Webhook-Secret: CcJlNnU6609i6PcGMp9oKiKcpY4xaCGuwNEfwAgq7uM=" \
+  -d '{"emailSubject":"Monitor is DOWN: myserver.example.com","emailBody":"Monitor name\nmyserver.example.com\nChecked URL\nmyserver.example.com\nRoot cause\nConnection Timeout\nRegion\nEurope\nIncident started at\n2025-12-17 09:22:59"}'
 
 # FileMaker (server name must match a server's "FileMaker Server Name" field or regular name)
 curl -X POST http://localhost:3000/api/webhooks/filemaker \
@@ -110,6 +116,39 @@ curl -X POST "http://localhost:3000/api/webhooks/aws-s3?token=hWdh7o6LNUPUR29cX2
   -H "Content-Type: application/json" \
   -d '{"operation":"restore","status":"started","object_key":"backup.tar.gz","bucket":"my-bucket"}'
 ```
+
+## 🔗 n8n Integration for UptimeRobot
+
+If you're using n8n to forward UptimeRobot email alerts to the webhook:
+
+### n8n Workflow Setup
+
+1. **Email Trigger Node** - Capture UptimeRobot alerts
+2. **HTTP Request Node** - Forward to webhook
+   - **Method**: POST
+   - **URL**: `https://your-domain.com/api/webhooks/uptimerobot`
+   - **Headers**: 
+     - `Content-Type`: `application/json`
+     - `X-Webhook-Secret`: Your secret from `.env.local`
+   - **Body**:
+     ```json
+     {
+       "emailSubject": "{{ $json.subject }}",
+       "emailBody": "{{ $json.text }}"
+     }
+     ```
+
+### Email Format Supported
+
+The webhook can parse UptimeRobot email alerts and extract:
+- **Monitor name** from subject line or body
+- **Status** (UP/DOWN) from subject
+- **Root cause** from email body
+- **Region** from email body  
+- **Incident time** from email body
+- **Checked URL** from email body
+
+Both plain text and HTML email formats are supported.
 
 ## 📊 View Server Dashboard
 
