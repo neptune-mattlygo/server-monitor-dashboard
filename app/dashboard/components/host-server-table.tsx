@@ -386,7 +386,7 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
               <TableCell className="text-sm text-gray-600">
                 {server.last_filemaker_event ? (
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{server.last_filemaker_event.event_type}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{server.last_filemaker_event.message || 'FileMaker Event'}</span>
                     <RelativeTime dateString={server.last_filemaker_event.created_at} />
                   </div>
                 ) : (
