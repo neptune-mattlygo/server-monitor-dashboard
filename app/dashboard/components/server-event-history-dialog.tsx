@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, Database, Server, TrendingUp, TrendingDown, Cloud, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatDateTime } from '@/lib/utils';
 
 interface EventData {
   id: string;
@@ -51,6 +52,10 @@ export function ServerEventHistoryDialog({
   const [s3Page, setS3Page] = useState(1);
   const [filemakerPage, setFilemakerPage] = useState(1);
   const [activeTab, setActiveTab] = useState('status');
+  
+  const statusObserverRef = useRef<HTMLDivElement>(null);
+  const s3ObserverRef = useRef<HTMLDivElement>(null);
+  const filemakerObserverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open && serverId) {
@@ -85,13 +90,26 @@ export function ServerEventHistoryDialog({
       if (isInitial || !data) {
         setData(result);
       } else {
-        // Append new data to existing data
+        // Append new data to existing data, filtering out duplicates
+        const existingStatusIds = new Set(data.events.status?.map((e: EventData) => e.id) || []);
+        const existingS3Ids = new Set(data.events.s3?.map((e: EventData) => e.id) || []);
+        const existingFilemakerIds = new Set(data.events.filemaker?.map((e: EventData) => e.id) || []);
+
         setData({
           ...result,
           events: {
-            status: [...(data.events.status || []), ...(result.events.status || [])],
-            s3: [...(data.events.s3 || []), ...(result.events.s3 || [])],
-            filemaker: [...(data.events.filemaker || []), ...(result.events.filemaker || [])],
+            status: [
+              ...(data.events.status || []),
+              ...(result.events.status || []).filter((e: EventData) => !existingStatusIds.has(e.id))
+            ],
+            s3: [
+              ...(data.events.s3 || []),
+              ...(result.events.s3 || []).filter((e: EventData) => !existingS3Ids.has(e.id))
+            ],
+            filemaker: [
+              ...(data.events.filemaker || []),
+              ...(result.events.filemaker || []).filter((e: EventData) => !existingFilemakerIds.has(e.id))
+            ],
             backups: result.events.backups,
           },
           pagination: result.pagination,
@@ -105,7 +123,9 @@ export function ServerEventHistoryDialog({
     }
   };
 
-  const loadMore = (tab: 'status' | 's3' | 'filemaker') => {
+  const loadMore = useCallback((tab: 'status' | 's3' | 'filemaker') => {
+    if (loadingMore) return;
+    
     if (tab === 'status' && data?.pagination?.status?.page < data?.pagination?.status?.totalPages) {
       setStatusPage(prev => prev + 1);
       setTimeout(() => fetchEventHistory(false), 0);
@@ -116,42 +136,62 @@ export function ServerEventHistoryDialog({
       setFilemakerPage(prev => prev + 1);
       setTimeout(() => fetchEventHistory(false), 0);
     }
-  };
+  }, [loadingMore, data?.pagination]);
 
-  const LoadMoreButton = ({ 
-    tab,
-    page, 
-    totalPages, 
-  }: { 
-    tab: 'status' | 's3' | 'filemaker';
-    page: number; 
-    totalPages: number; 
-  }) => {
+  // Auto-load more when scrolling to bottom
+  useEffect(() => {
+    const options = {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1,
+    };
+
+    const handleIntersect = (entries: IntersectionObserverEntry[], tab: 'status' | 's3' | 'filemaker') => {
+      const [entry] = entries;
+      if (entry.isIntersecting && !loadingMore && activeTab === tab) {
+        loadMore(tab);
+      }
+    };
+
+    const statusObserver = new IntersectionObserver(
+      (entries) => handleIntersect(entries, 'status'),
+      options
+    );
+    const s3Observer = new IntersectionObserver(
+      (entries) => handleIntersect(entries, 's3'),
+      options
+    );
+    const filemakerObserver = new IntersectionObserver(
+      (entries) => handleIntersect(entries, 'filemaker'),
+      options
+    );
+
+    if (statusObserverRef.current) statusObserver.observe(statusObserverRef.current);
+    if (s3ObserverRef.current) s3Observer.observe(s3ObserverRef.current);
+    if (filemakerObserverRef.current) filemakerObserver.observe(filemakerObserverRef.current);
+
+    return () => {
+      statusObserver.disconnect();
+      s3Observer.disconnect();
+      filemakerObserver.disconnect();
+    };
+  }, [loadMore, loadingMore, activeTab]);
+
+  const LoadingIndicator = ({ page, totalPages }: { page: number; totalPages: number }) => {
     if (page >= totalPages) return null;
 
     return (
       <div className="flex items-center justify-center pt-4 border-t">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => loadMore(tab)}
-          disabled={loadingMore}
-        >
-          {loadingMore ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100 mr-2" />
-              Loading...
-            </>
-          ) : (
-            <>
-              Load More
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </>
-          )}
-        </Button>
-        <span className="text-sm text-gray-600 dark:text-gray-400 ml-4">
-          Page {page} of {totalPages}
-        </span>
+        {loadingMore ? (
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100 mr-2" />
+            Loading more...
+          </div>
+        ) : (
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Page {page} of {totalPages}
+          </span>
+        )}
       </div>
     );
   };
@@ -265,9 +305,9 @@ export function ServerEventHistoryDialog({
                     No status change events recorded
                   </p>
                 )}
+                <div ref={statusObserverRef} />
                 {data.pagination?.status && (
-                  <LoadMoreButton
-                    tab="status"
+                  <LoadingIndicator
                     page={data.pagination.status.page}
                     totalPages={data.pagination.status.totalPages}
                   />
@@ -382,9 +422,9 @@ export function ServerEventHistoryDialog({
                     No S3 events recorded
                   </p>
                 )}
+                <div ref={s3ObserverRef} />
                 {data.pagination?.s3 && (
-                  <LoadMoreButton
-                    tab="s3"
+                  <LoadingIndicator
                     page={data.pagination.s3.page}
                     totalPages={data.pagination.s3.totalPages}
                   />
@@ -455,9 +495,9 @@ export function ServerEventHistoryDialog({
                     No FileMaker Server events recorded
                   </p>
                 )}
+                <div ref={filemakerObserverRef} />
                 {data.pagination?.filemaker && (
-                  <LoadMoreButton
-                    tab="filemaker"
+                  <LoadingIndicator
                     page={data.pagination.filemaker.page}
                     totalPages={data.pagination.filemaker.totalPages}
                   />
