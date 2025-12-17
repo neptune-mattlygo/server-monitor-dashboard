@@ -14,6 +14,13 @@ export async function GET(
 
     const params = await context.params;
     const serverId = params.id;
+    
+    // Get pagination parameters from query string
+    const { searchParams } = new URL(request.url);
+    const statusPage = parseInt(searchParams.get('statusPage') || '1');
+    const s3Page = parseInt(searchParams.get('s3Page') || '1');
+    const filemakerPage = parseInt(searchParams.get('filemakerPage') || '1');
+    const pageSize = 20;
 
     // Fetch server to ensure it exists
     const { data: server, error: serverError } = await supabaseAdmin
@@ -26,14 +33,33 @@ export async function GET(
       return NextResponse.json({ error: 'Server not found' }, { status: 404 });
     }
 
-    // Fetch recent events categorized by type
+    // Fetch total counts for pagination
+    const { count: statusCount } = await supabaseAdmin
+      .from('server_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('server_id', serverId)
+      .in('event_type', ['status_change', 'created']);
+
+    const { count: filemakerCount } = await supabaseAdmin
+      .from('server_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('server_id', serverId)
+      .eq('event_type', 'filemaker_event');
+
+    const { count: s3Count } = await supabaseAdmin
+      .from('server_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('server_id', serverId)
+      .eq('event_source', 'aws_s3');
+
+    // Fetch recent events categorized by type with pagination
     const { data: statusEvents } = await supabaseAdmin
       .from('server_events')
       .select('*')
       .eq('server_id', serverId)
       .in('event_type', ['status_change', 'created'])
       .order('created_at', { ascending: false })
-      .limit(50);
+      .range((statusPage - 1) * pageSize, statusPage * pageSize - 1);
 
     const { data: backupEvents } = await supabaseAdmin
       .from('server_events')
@@ -49,7 +75,7 @@ export async function GET(
       .eq('server_id', serverId)
       .eq('event_type', 'filemaker_event')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .range((filemakerPage - 1) * pageSize, filemakerPage * pageSize - 1);
 
     const { data: s3Events } = await supabaseAdmin
       .from('server_events')
@@ -57,7 +83,7 @@ export async function GET(
       .eq('server_id', serverId)
       .eq('event_source', 'aws_s3')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .range((s3Page - 1) * pageSize, s3Page * pageSize - 1);
 
     // Filter out backup.config files from display
     const filteredS3Events = s3Events?.filter(event => 
@@ -112,10 +138,30 @@ export async function GET(
         lastUpEvent: lastUpEvent || null,
       },
       events: {
-        status: statusEvents?.slice(0, 20) || [],
+        status: statusEvents || [],
         backups: backupEvents || [],
         filemaker: filemakerEvents || [],
         s3: filteredS3Events,
+      },
+      pagination: {
+        status: {
+          page: statusPage,
+          pageSize,
+          total: statusCount || 0,
+          totalPages: Math.ceil((statusCount || 0) / pageSize),
+        },
+        s3: {
+          page: s3Page,
+          pageSize,
+          total: s3Count || 0,
+          totalPages: Math.ceil((s3Count || 0) / pageSize),
+        },
+        filemaker: {
+          page: filemakerPage,
+          pageSize,
+          total: filemakerCount || 0,
+          totalPages: Math.ceil((filemakerCount || 0) / pageSize),
+        },
       },
       lastBackup,
       lastFilemakerEvent,

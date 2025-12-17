@@ -9,10 +9,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, Database, Server, TrendingUp, TrendingDown, Cloud } from 'lucide-react';
+import { Clock, Database, Server, TrendingUp, TrendingDown, Cloud, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface EventData {
   id: string;
@@ -45,19 +46,27 @@ export function ServerEventHistoryDialog({
 }: ServerEventHistoryDialogProps) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
+  const [statusPage, setStatusPage] = useState(1);
+  const [s3Page, setS3Page] = useState(1);
+  const [filemakerPage, setFilemakerPage] = useState(1);
 
   useEffect(() => {
     if (open && serverId) {
       fetchEventHistory();
     }
-  }, [open, serverId]);
+  }, [open, serverId, statusPage, s3Page, filemakerPage]);
 
   const fetchEventHistory = async () => {
     if (!serverId) return;
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/servers/${serverId}/summary`);
+      const params = new URLSearchParams({
+        statusPage: statusPage.toString(),
+        s3Page: s3Page.toString(),
+        filemakerPage: filemakerPage.toString(),
+      });
+      const response = await fetch(`/api/servers/${serverId}/summary?${params}`);
       if (!response.ok) throw new Error('Failed to fetch event history');
       const result = await response.json();
       setData(result);
@@ -85,6 +94,46 @@ export function ServerEventHistoryDialog({
       default:
         return 'text-gray-600';
     }
+  };
+
+  const PaginationControls = ({ 
+    page, 
+    totalPages, 
+    onPageChange 
+  }: { 
+    page: number; 
+    totalPages: number; 
+    onPageChange: (page: number) => void;
+  }) => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between pt-4 border-t">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Page {page} of {totalPages}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(page - 1)}
+            disabled={page === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(page + 1)}
+            disabled={page === totalPages}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -196,6 +245,13 @@ export function ServerEventHistoryDialog({
                     No status change events recorded
                   </p>
                 )}
+                {data.pagination?.status && (
+                  <PaginationControls
+                    page={data.pagination.status.page}
+                    totalPages={data.pagination.status.totalPages}
+                    onPageChange={setStatusPage}
+                  />
+                )}
               </TabsContent>
 
               {/* S3 Events Tab */}
@@ -306,6 +362,13 @@ export function ServerEventHistoryDialog({
                     No S3 events recorded
                   </p>
                 )}
+                {data.pagination?.s3 && (
+                  <PaginationControls
+                    page={data.pagination.s3.page}
+                    totalPages={data.pagination.s3.totalPages}
+                    onPageChange={setS3Page}
+                  />
+                )}
               </TabsContent>
 
               {/* FileMaker Events Tab */}
@@ -371,6 +434,13 @@ export function ServerEventHistoryDialog({
                   <p className="text-center text-gray-500 py-8">
                     No FileMaker Server events recorded
                   </p>
+                )}
+                {data.pagination?.filemaker && (
+                  <PaginationControls
+                    page={data.pagination.filemaker.page}
+                    totalPages={data.pagination.filemaker.totalPages}
+                    onPageChange={setFilemakerPage}
+                  />
                 )}
               </TabsContent>
             </ScrollArea>
