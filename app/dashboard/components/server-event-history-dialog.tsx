@@ -215,7 +215,7 @@ export function ServerEventHistoryDialog({
             <Skeleton className="h-64 w-full" />
           </div>
         ) : data ? (
-          <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
+          <Tabs value={activeTab} className="w-full" onValueChange={(value) => setActiveTab(value as typeof defaultTab)}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="status">
                 <TrendingUp className="h-4 w-4 mr-2" />
