@@ -48,10 +48,39 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, host_id, current_status, metadata, bucket, fmserver_name, admin_url, admin_username, admin_password } = body;
+    const { 
+      name, 
+      host_id, 
+      current_status, 
+      metadata, 
+      bucket, 
+      fmserver_name, 
+      admin_url, 
+      admin_username, 
+      admin_password,
+      backup_monitoring_excluded,
+      backup_monitoring_disabled_reason,
+      backup_monitoring_review_date
+    } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    // Validate backup monitoring exclusion fields
+    if (backup_monitoring_excluded) {
+      if (!backup_monitoring_disabled_reason?.trim()) {
+        return NextResponse.json(
+          { error: 'Reason for disabling backup monitoring is required' },
+          { status: 400 }
+        );
+      }
+      if (!backup_monitoring_review_date) {
+        return NextResponse.json(
+          { error: 'Review date is required when backup monitoring is disabled' },
+          { status: 400 }
+        );
+      }
     }
 
     const { data: server, error } = await supabaseAdmin
@@ -66,6 +95,9 @@ export async function POST(request: NextRequest) {
         admin_url: admin_url || null,
         admin_username: admin_username || null,
         admin_password: admin_password ? encrypt(admin_password) : null,
+        backup_monitoring_excluded: backup_monitoring_excluded || false,
+        backup_monitoring_disabled_reason: backup_monitoring_excluded ? backup_monitoring_disabled_reason : null,
+        backup_monitoring_review_date: backup_monitoring_excluded ? backup_monitoring_review_date : null,
       })
       .select()
       .single();

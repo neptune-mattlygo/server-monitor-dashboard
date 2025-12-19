@@ -58,6 +58,9 @@ export type Server = {
   current_status: 'up' | 'down' | 'degraded' | 'maintenance';
   last_status_change: string;
   metadata: Record<string, any>;
+  backup_monitoring_excluded?: boolean;
+  backup_monitoring_disabled_reason?: string | null;
+  backup_monitoring_review_date?: string | null;
   created_at: string;
   updated_at: string;
 };

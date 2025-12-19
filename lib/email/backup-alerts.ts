@@ -33,6 +33,17 @@ export interface OverdueServer {
   is_small_file: boolean;
 }
 
+export interface ServerDueForReview {
+  id: string;
+  name: string;
+  host?: {
+    name: string;
+  } | null;
+  backup_monitoring_disabled_reason: string;
+  backup_monitoring_review_date: string;
+  days_until_review: number;
+}
+
 /**
  * Send backup alert email to distribution list
  * Aggregates all overdue servers into a single email per recipient
@@ -40,14 +51,15 @@ export interface OverdueServer {
 export async function sendBackupAlertEmail(
   recipients: string[],
   overdueServers: OverdueServer[],
-  thresholdHours: number
+  thresholdHours: number,
+  serversDueForReview: ServerDueForReview[] = []
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (!recipients || recipients.length === 0) {
       throw new Error('No email recipients provided');
     }
 
-    if (!overdueServers || overdueServers.length === 0) {
+    if ((!overdueServers || overdueServers.length === 0) && (!serversDueForReview || serversDueForReview.length === 0)) {
       throw new Error('No overdue servers provided');
     }
 
@@ -71,13 +83,22 @@ export async function sendBackupAlertEmail(
     });
 
     const client = getResendClient();
+    // Build subject line
+    const subjectParts = [];
+    if (overdueServers.length > 0) {
+      subjectParts.push(`${overdueServers.length} Server(s) Overdue`);
+    }
+    if (serversDueForReview.length > 0) {
+      subjectParts.push(`${serversDueForReview.length} Review(s) Due`);
+    }
+    const subject = `${severityEmoji} Backup Alert: ${subjectParts.join(', ')}`;
     
     // Send email to all recipients
     await client.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: recipients,
-      subject: `${severityEmoji} Backup Alert: ${overdueServers.length} Server(s) Overdue`,
-      html: generateBackupAlertHTML(serversByHost, sortedHosts, thresholdHours, severityClass, overdueServers.length),
+      subject,
+      html: generateBackupAlertHTML(serversByHost, sortedHosts, thresholdHours, severityClass, overdueServers.length, serversDueForReview),
     });
 
     return { success: true };
@@ -103,7 +124,8 @@ function generateBackupAlertHTML(
   sortedHosts: string[],
   thresholdHours: number,
   severity: string,
-  totalServerCount: number
+  totalServerCount: number,
+  serversDueForReview: ServerDueForReview[] = []
 ): string {
   const serversHTML = sortedHosts.map(hostName => {
     const hostServers = serversByHost[hostName];
@@ -318,6 +340,7 @@ function generateBackupAlertHTML(
             </p>
           </div>
 
+          ${totalServerCount > 0 ? `
           <table class="servers-table">
             <thead>
               <tr>
@@ -331,6 +354,65 @@ function generateBackupAlertHTML(
               ${serversHTML}
             </tbody>
           </table>
+          ` : ''}
+
+          ${serversDueForReview.length > 0 ? `
+          <div style="margin-top: 40px;">
+            <h2 style="color: #333; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+              📋 Servers Due for Review
+            </h2>
+            <div class="summary" style="background: #e3f2fd; border-left-color: #2196f3;">
+              <p style="color: #0d47a1;">
+                <strong>${serversDueForReview.length} server${serversDueForReview.length !== 1 ? 's are' : ' is'} due for backup monitoring review.</strong>
+                Please review whether backup monitoring should be re-enabled.
+              </p>
+            </div>
+            <table class="servers-table">
+              <thead>
+                <tr>
+                  <th>Server</th>
+                  <th>Reason</th>
+                  <th style="text-align: center;">Review Date</th>
+                  <th style="text-align: center;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${serversDueForReview.map(server => {
+                  const reviewDate = new Date(server.backup_monitoring_review_date);
+                  const statusClass = server.days_until_review < 0 ? 'status-critical' : 
+                                     server.days_until_review <= 3 ? 'status-warning' : '';
+                  const statusText = server.days_until_review < 0 
+                    ? `${Math.abs(server.days_until_review)} day${Math.abs(server.days_until_review) !== 1 ? 's' : ''} overdue`
+                    : server.days_until_review === 0 
+                    ? 'Due today' 
+                    : `Due in ${server.days_until_review} day${server.days_until_review !== 1 ? 's' : ''}`;
+                  
+                  return `
+                    <tr class="host-header-row">
+                      <td colspan="4" class="host-header">
+                        <strong>${server.host?.name || 'No Host'}</strong>
+                      </td>
+                    </tr>
+                    <tr class="server-row">
+                      <td class="server-name">
+                        <strong>${server.name}</strong>
+                      </td>
+                      <td style="font-size: 13px; color: #666; max-width: 300px;">
+                        ${server.backup_monitoring_disabled_reason}
+                      </td>
+                      <td style="text-align: center; font-size: 14px;">
+                        ${reviewDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </td>
+                      <td class="${statusClass}" style="text-align: center; font-size: 14px; font-weight: 600;">
+                        ${statusText}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+          ` : ''}
 
           <div style="text-align: center; margin-top: 30px;">
             <a href="${DASHBOARD_URL}/dashboard" class="button">View Dashboard</a>

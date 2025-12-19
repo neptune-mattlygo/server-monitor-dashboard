@@ -40,6 +40,17 @@ interface OverdueServer extends Server {
   is_small_file: boolean;
 }
 
+interface ServerDueForReview {
+  id: string;
+  name: string;
+  host?: {
+    name: string;
+  } | null;
+  backup_monitoring_disabled_reason: string;
+  backup_monitoring_review_date: string;
+  days_until_review: number;
+}
+
 /**
  * Shared backup monitoring check logic
  * Called by both the cron endpoint and the test endpoint
@@ -95,6 +106,42 @@ export async function performBackupCheck() {
     console.error('Failed to fetch servers:', serversError);
     throw new Error('Failed to fetch servers');
   }
+
+  // Get servers that are excluded but due for review (review date today or overdue)
+  const today = new Date().toISOString().split('T')[0];
+  
+  const { data: serversDueForReview, error: reviewError } = await supabaseAdmin
+    .from('servers')
+    .select(`
+      id,
+      name,
+      backup_monitoring_disabled_reason,
+      backup_monitoring_review_date,
+      host:hosts(name)
+    `)
+    .eq('backup_monitoring_excluded', true)
+    .not('backup_monitoring_review_date', 'is', null)
+    .lte('backup_monitoring_review_date', today)
+    .order('backup_monitoring_review_date');
+
+  if (reviewError) {
+    console.error('Failed to fetch servers due for review:', reviewError);
+  }
+
+  const serversForReview: ServerDueForReview[] = (serversDueForReview || []).map(server => {
+    const reviewDate = new Date(server.backup_monitoring_review_date);
+    const today = new Date();
+    const daysUntilReview = Math.ceil((reviewDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      id: server.id,
+      name: server.name,
+      host: Array.isArray(server.host) ? server.host[0] : server.host,
+      backup_monitoring_disabled_reason: server.backup_monitoring_disabled_reason,
+      backup_monitoring_review_date: server.backup_monitoring_review_date,
+      days_until_review: daysUntilReview,
+    };
+  });
 
   if (!servers || servers.length === 0) {
     console.log('No servers found to monitor');
@@ -214,10 +261,33 @@ export async function performBackupCheck() {
     }
   }
 
+  // Combine overdue and small file servers for alerting
+  const serversNeedingAlert = [...overdueServers, ...smallFileServers];
+
+  // Send email notification if there are servers needing alerts OR servers due for review
+  let notificationSent = false;
+  let notificationError = null;
+
+  if (serversNeedingAlert.length > 0 || serversForReview.length > 0) {
+    try {
+      await sendBackupAlertEmail(
+        config.email_recipients,
+        serversNeedingAlert,
+        config.threshold_hours,
+        serversForReview
+      );
+      notificationSent = true;
+      console.log('Backup alert email sent to ' + config.email_recipients.length + ' recipients (' + overdueServers.length + ' overdue, ' + smallFileServers.length + ' small files, ' + serversForReview.length + ' due for review)');
+    } catch (emailError: any) {
+      notificationError = emailError.message || 'Failed to send email';
+      console.error('Failed to send backup alert email:', emailError);
+    }
+  }
+
   // Log servers with no backup history for debugging
   if (serversWithNoBackups.length > 0) {
     const alertingOn = config.alert_on_never_backed_up ? ' (ALERTING)' : ' (not alerting)';
-    console.log(`⚠️  ${serversWithNoBackups.length} servers have no backup history yet${alertingOn}:`, 
+    console.log('WARNING: ' + serversWithNoBackups.length + ' servers have no backup history yet' + alertingOn + ':', 
       serversWithNoBackups.map(s => s.name).join(', '));
   }
 
@@ -228,32 +298,10 @@ export async function performBackupCheck() {
     servers_overdue: overdueServers.length,
     overdue_server_ids: overdueServers.map(s => s.id),
     threshold_hours: config.threshold_hours,
-    notification_sent: false,
+    notification_sent: notificationSent,
     notification_recipients: config.email_recipients,
-    notification_error: null,
+    notification_error: notificationError,
   };
-
-  // Combine overdue servers and small file servers for email alerts
-  const serversNeedingAlert = [...overdueServers, ...smallFileServers];
-  
-  // Send email if there are servers needing alerts
-  let notificationSent = false;
-  let notificationError = null;
-
-  if (serversNeedingAlert.length > 0) {
-    try {
-      await sendBackupAlertEmail(
-        config.email_recipients,
-        serversNeedingAlert,
-        config.threshold_hours
-      );
-      notificationSent = true;
-      console.log(`Backup alert email sent to ${config.email_recipients.length} recipients (${overdueServers.length} overdue, ${smallFileServers.length} small files)`);
-    } catch (emailError: any) {
-      notificationError = emailError.message || 'Failed to send email';
-      console.error('Failed to send backup alert email:', emailError);
-    }
-  }
 
   // Update result with notification status
   resultData.notification_sent = notificationSent;

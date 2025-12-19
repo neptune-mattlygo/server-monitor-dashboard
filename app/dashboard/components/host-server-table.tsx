@@ -35,6 +35,8 @@ interface Server {
   bucket?: string | null;
   fmserver_name?: string | null;
   backup_monitoring_excluded?: boolean;
+  backup_monitoring_disabled_reason?: string | null;
+  backup_monitoring_review_date?: string | null;
   admin_url?: string | null;
   admin_username?: string | null;
   admin_password?: string | null;
@@ -121,6 +123,7 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
   const [eventHistoryServerId, setEventHistoryServerId] = useState<string | null>(null);
   const [eventHistoryServerName, setEventHistoryServerName] = useState<string>('');
   const [eventHistoryOpen, setEventHistoryOpen] = useState(false);
+  const [eventHistoryDefaultTab, setEventHistoryDefaultTab] = useState<'status' | 'backups' | 's3' | 'filemaker'>('status');
   const router = useRouter();
 
   const handleSort = (field: SortField) => {
@@ -166,6 +169,13 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
   };
 
   const handleRowClick = (server: Server) => {
+    setEventHistoryServerId(server.id);
+    setEventHistoryServerName(server.name);
+    setEventHistoryDefaultTab('status');
+    setEventHistoryOpen(true);
+  };
+
+  const handleEditClick = (server: Server) => {
     setSelectedServer(server);
     setDialogOpen(true);
   };
@@ -184,6 +194,8 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
           bucket: updatedServer.bucket,
           fmserver_name: updatedServer.fmserver_name,
           backup_monitoring_excluded: updatedServer.backup_monitoring_excluded,
+          backup_monitoring_disabled_reason: updatedServer.backup_monitoring_disabled_reason,
+          backup_monitoring_review_date: updatedServer.backup_monitoring_review_date,
           admin_url: updatedServer.admin_url,
           admin_username: updatedServer.admin_username,
           admin_password: updatedServer.admin_password,
@@ -315,12 +327,28 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
                       <HoverCardTrigger asChild>
                         <EyeOff className="h-4 w-4 text-gray-500 cursor-help" />
                       </HoverCardTrigger>
-                      <HoverCardContent className="w-60">
-                        <div className="space-y-1">
+                      <HoverCardContent className="w-80">
+                        <div className="space-y-2">
                           <h4 className="font-semibold text-sm">Backup Monitoring Disabled</h4>
                           <p className="text-xs text-muted-foreground">
                             Backup monitoring is disabled for this server. No backup alerts will be generated.
                           </p>
+                          {server.backup_monitoring_disabled_reason && (
+                            <div className="border-t pt-2">
+                              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Reason:</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                {server.backup_monitoring_disabled_reason}
+                              </p>
+                            </div>
+                          )}
+                          {server.backup_monitoring_review_date && (
+                            <div className="border-t pt-2">
+                              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Review Date:</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                {new Date(server.backup_monitoring_review_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </HoverCardContent>
                     </HoverCard>
@@ -428,7 +456,7 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRowClick(server);
+                      handleEditClick(server);
                     }}
                     title="Edit server"
                   >
@@ -468,6 +496,7 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
         serverName={eventHistoryServerName}
         open={eventHistoryOpen}
         onOpenChange={setEventHistoryOpen}
+        defaultTab={eventHistoryDefaultTab}
       />
     </>
   );
