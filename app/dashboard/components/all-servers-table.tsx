@@ -172,6 +172,8 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
           bucket: updatedServer.bucket,
           fmserver_name: updatedServer.fmserver_name,
           backup_monitoring_excluded: updatedServer.backup_monitoring_excluded,
+          backup_monitoring_disabled_reason: updatedServer.backup_monitoring_disabled_reason,
+          backup_monitoring_review_date: updatedServer.backup_monitoring_review_date,
           admin_url: updatedServer.admin_url,
           admin_username: updatedServer.admin_username,
           admin_password: updatedServer.admin_password,
@@ -440,7 +442,7 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRowClick(server);
+                      handleEditClick(server);
                     }}
                     title="Edit server"
                   >
