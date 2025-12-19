@@ -136,7 +136,7 @@ export async function performBackupCheck() {
     return {
       id: server.id,
       name: server.name,
-      host: server.host,
+      host: Array.isArray(server.host) ? server.host[0] : server.host,
       backup_monitoring_disabled_reason: server.backup_monitoring_disabled_reason,
       backup_monitoring_review_date: server.backup_monitoring_review_date,
       days_until_review: daysUntilReview,
