@@ -40,6 +40,17 @@ interface OverdueServer extends Server {
   is_small_file: boolean;
 }
 
+interface ServerDueForReview {
+  id: string;
+  name: string;
+  host?: {
+    name: string;
+  } | null;
+  backup_monitoring_disabled_reason: string;
+  backup_monitoring_review_date: string;
+  days_until_review: number;
+}
+
 /**
  * Shared backup monitoring check logic
  * Called by both the cron endpoint and the test endpoint
@@ -95,6 +106,43 @@ export async function performBackupCheck() {
     console.error('Failed to fetch servers:', serversError);
     throw new Error('Failed to fetch servers');
   }
+
+  // Get servers that are excluded but due for review (within 7 days or overdue)
+  const reviewDateThreshold = new Date();
+  reviewDateThreshold.setDate(reviewDateThreshold.getDate() + 7); // Check 7 days ahead
+  
+  const { data: serversDueForReview, error: reviewError } = await supabaseAdmin
+    .from('servers')
+    .select(`
+      id,
+      name,
+      backup_monitoring_disabled_reason,
+      backup_monitoring_review_date,
+      host:hosts(name)
+    `)
+    .eq('backup_monitoring_excluded', true)
+    .not('backup_monitoring_review_date', 'is', null)
+    .lte('backup_monitoring_review_date', reviewDateThreshold.toISOString().split('T')[0])
+    .order('backup_monitoring_review_date');
+
+  if (reviewError) {
+    console.error('Failed to fetch servers due for review:', reviewError);
+  }
+
+  const serversForReview: ServerDueForReview[] = (serversDueForReview || []).map(server => {
+    const reviewDate = new Date(server.backup_monitoring_review_date);
+    const today = new Date();
+    const daysUntilReview = Math.ceil((reviewDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      id: server.id,
+      name: server.name,
+      host: server.host,
+      backup_monitoring_disabled_reason: server.backup_monitoring_disabled_reason,
+      backup_monitoring_review_date: server.backup_monitoring_review_date,
+      days_until_review: daysUntilReview,
+    };
+  });
 
   if (!servers || servers.length === 0) {
     console.log('No servers found to monitor');
@@ -199,19 +247,20 @@ export async function performBackupCheck() {
       const fileSizeMB = latestBackup.backup_file_size / (1024 * 1024);
       
       smallFileServers.push({
-        id: server.id,
-        name: server.name,
-        ip_address: server.ip_address,
-        host_id: server.host_id,
-        host: Array.isArray(server.host) ? server.host[0] : server.host,
-        last_backup_at: latestBackup.created_at,
-        last_backup_database: latestBackup.backup_database,
-        hours_since_backup: 0,
-        file_size: latestBackup.backup_file_size,
-        file_size_mb: fileSizeMB,
-        is_small_file: true,
-      });
-    }
+        id: server.id, OR servers due for review
+  let notificationSent = false;
+  let notificationError = null;
+
+  if (serversNeedingAlert.length > 0 || serversForReview.length > 0) {
+    try {
+      await sendBackupAlertEmail(
+        config.email_recipients,
+        serversNeedingAlert,
+        config.threshold_hours,
+        serversForReview
+      );
+      notificationSent = true;
+      console.log(`Backup alert email sent to ${config.email_recipients.length} recipients (${overdueServers.length} overdue, ${smallFileServers.length} small files, ${serversForReview.length} due for review
   }
 
   // Log servers with no backup history for debugging

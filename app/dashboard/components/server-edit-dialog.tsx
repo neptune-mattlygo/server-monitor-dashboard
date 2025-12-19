@@ -148,8 +148,9 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="backup">Backup Monitoring</TabsTrigger>
             <TabsTrigger value="metadata">FileMaker Metadata</TabsTrigger>
           </TabsList>
 
@@ -348,73 +349,6 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
             </div>
           </div>
 
-          <div className="space-y-4 rounded-lg border p-4">
-            <div className="flex items-center justify-between space-x-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="backup-monitoring">Exclude from Backup Monitoring</Label>
-                <p className="text-xs text-muted-foreground">
-                  When enabled, this server will not trigger backup alerts
-                </p>
-              </div>
-              <Switch
-                id="backup-monitoring"
-                checked={editedServer.backup_monitoring_excluded || false}
-                onCheckedChange={(checked) => {
-                  setEditedServer({ 
-                    ...editedServer, 
-                    backup_monitoring_excluded: checked,
-                    // Clear fields when unchecking
-                    backup_monitoring_disabled_reason: checked ? editedServer.backup_monitoring_disabled_reason : null,
-                    backup_monitoring_review_date: checked ? editedServer.backup_monitoring_review_date : null,
-                  });
-                }}
-              />
-            </div>
-
-            {editedServer.backup_monitoring_excluded && (
-              <div className="space-y-4 pt-2">
-                <div className="grid gap-2">
-                  <Label htmlFor="disabled-reason" className="flex items-center gap-1">
-                    Reason for Disabling <span className="text-red-500">*</span>
-                  </Label>
-                  <Textarea
-                    id="disabled-reason"
-                    value={editedServer.backup_monitoring_disabled_reason || ''}
-                    onChange={(e) => setEditedServer({ 
-                      ...editedServer, 
-                      backup_monitoring_disabled_reason: e.target.value 
-                    })}
-                    placeholder="e.g., Server is being decommissioned, no backups needed"
-                    rows={3}
-                    className="resize-none"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Required: Explain why backup monitoring is disabled
-                  </p>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="review-date" className="flex items-center gap-1">
-                    Review Date <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="review-date"
-                    type="date"
-                    value={editedServer.backup_monitoring_review_date || ''}
-                    onChange={(e) => setEditedServer({ 
-                      ...editedServer, 
-                      backup_monitoring_review_date: e.target.value 
-                    })}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Required: Date to review if backup monitoring should be re-enabled
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
           <div className="grid gap-2">
             <Label>Server ID</Label>
             <div className="text-sm text-muted-foreground font-mono">
@@ -422,6 +356,84 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
             </div>
           </div>
         </div>
+          </TabsContent>
+
+          <TabsContent value="backup" className="space-y-4 mt-4">
+            <div className="grid gap-4">
+              <div className="space-y-4 rounded-lg border p-4">
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="backup-monitoring">Exclude from Backup Monitoring</Label>
+                    <p className="text-xs text-muted-foreground">
+                      When enabled, this server will not trigger backup alerts
+                    </p>
+                  </div>
+                  <Switch
+                    id="backup-monitoring"
+                    checked={editedServer.backup_monitoring_excluded || false}
+                    onCheckedChange={(checked) => {
+                      setEditedServer({ 
+                        ...editedServer, 
+                        backup_monitoring_excluded: checked,
+                        // Clear fields when unchecking
+                        backup_monitoring_disabled_reason: checked ? editedServer.backup_monitoring_disabled_reason : null,
+                        backup_monitoring_review_date: checked ? editedServer.backup_monitoring_review_date : null,
+                      });
+                    }}
+                  />
+                </div>
+
+                {editedServer.backup_monitoring_excluded && (
+                  <div className="space-y-4 pt-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="disabled-reason" className="flex items-center gap-1">
+                        Reason for Disabling <span className="text-red-500">*</span>
+                      </Label>
+                      <Textarea
+                        id="disabled-reason"
+                        value={editedServer.backup_monitoring_disabled_reason || ''}
+                        onChange={(e) => setEditedServer({ 
+                          ...editedServer, 
+                          backup_monitoring_disabled_reason: e.target.value 
+                        })}
+                        placeholder="e.g., Server is being decommissioned, no backups needed"
+                        rows={3}
+                        className="resize-none"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Required: Explain why backup monitoring is disabled
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="review-date" className="flex items-center gap-1">
+                        Review Date <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="review-date"
+                        type="date"
+                        value={editedServer.backup_monitoring_review_date || ''}
+                        onChange={(e) => setEditedServer({ 
+                          ...editedServer, 
+                          backup_monitoring_review_date: e.target.value 
+                        })}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Required: Date to review if backup monitoring should be re-enabled
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!editedServer.backup_monitoring_excluded && (
+                  <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg">
+                    <p className="font-medium mb-2">Backup Monitoring Active</p>
+                    <p>This server is included in automated backup monitoring checks. You will receive alerts if backups become overdue.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="metadata" className="space-y-4 mt-4">
