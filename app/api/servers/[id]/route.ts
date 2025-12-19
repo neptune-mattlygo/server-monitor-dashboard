@@ -50,9 +50,38 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, host_id, current_status, metadata, bucket, fmserver_name, backup_monitoring_excluded, admin_url, admin_username, admin_password } = body;
+    const { 
+      name, 
+      host_id, 
+      current_status, 
+      metadata, 
+      bucket, 
+      fmserver_name, 
+      backup_monitoring_excluded, 
+      backup_monitoring_disabled_reason,
+      backup_monitoring_review_date,
+      admin_url, 
+      admin_username, 
+      admin_password 
+    } = body;
 
     console.log('PATCH /api/servers/[id] - Received body:', { admin_url, admin_username, has_password: !!admin_password });
+
+    // Validate backup monitoring exclusion fields
+    if (backup_monitoring_excluded) {
+      if (!backup_monitoring_disabled_reason?.trim()) {
+        return NextResponse.json(
+          { error: 'Reason for disabling backup monitoring is required' },
+          { status: 400 }
+        );
+      }
+      if (!backup_monitoring_review_date) {
+        return NextResponse.json(
+          { error: 'Review date is required when backup monitoring is disabled' },
+          { status: 400 }
+        );
+      }
+    }
 
     // Get the current server state for comparison
     const { data: currentServer } = await supabaseAdmin
@@ -66,7 +95,12 @@ export async function PATCH(
     if (host_id !== undefined) updateData.host_id = host_id;
     if (bucket !== undefined) updateData.bucket = bucket;
     if (fmserver_name !== undefined) updateData.fmserver_name = fmserver_name;
-    if (backup_monitoring_excluded !== undefined) updateData.backup_monitoring_excluded = backup_monitoring_excluded;
+    if (backup_monitoring_excluded !== undefined) {
+      updateData.backup_monitoring_excluded = backup_monitoring_excluded;
+      // Clear reason and date when re-enabling monitoring
+      updateData.backup_monitoring_disabled_reason = backup_monitoring_excluded ? backup_monitoring_disabled_reason : null;
+      updateData.backup_monitoring_review_date = backup_monitoring_excluded ? backup_monitoring_review_date : null;
+    }
     if (admin_url !== undefined) updateData.admin_url = admin_url;
     if (admin_username !== undefined) updateData.admin_username = admin_username;
     if (admin_password !== undefined) updateData.admin_password = admin_password ? encrypt(admin_password) : null;
