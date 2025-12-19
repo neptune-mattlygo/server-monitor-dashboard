@@ -9,6 +9,14 @@ ADD COLUMN IF NOT EXISTS backup_monitoring_review_date DATE;
 COMMENT ON COLUMN servers.backup_monitoring_disabled_reason IS 'Required explanation for why backup monitoring is disabled for this server';
 COMMENT ON COLUMN servers.backup_monitoring_review_date IS 'Required date to review whether backup monitoring should be re-enabled';
 
+-- Update existing servers with backup_monitoring_excluded = true to have default values
+-- This ensures the constraint can be applied without errors
+UPDATE servers 
+SET backup_monitoring_disabled_reason = 'Legacy exclusion - please review and update reason',
+    backup_monitoring_review_date = CURRENT_DATE + INTERVAL '30 days'
+WHERE backup_monitoring_excluded = true 
+  AND (backup_monitoring_disabled_reason IS NULL OR backup_monitoring_review_date IS NULL);
+
 -- Add check constraint to ensure both fields are provided when backup_monitoring_excluded is true
 -- or both are null when backup_monitoring_excluded is false
 ALTER TABLE servers
