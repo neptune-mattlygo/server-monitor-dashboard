@@ -37,6 +37,7 @@ interface ServerEventHistoryDialogProps {
   serverName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultTab?: 'status' | 'backups' | 's3' | 'filemaker';
 }
 
 export function ServerEventHistoryDialog({
@@ -44,6 +45,7 @@ export function ServerEventHistoryDialog({
   serverName,
   open,
   onOpenChange,
+  defaultTab = 'status',
 }: ServerEventHistoryDialogProps) {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -51,7 +53,7 @@ export function ServerEventHistoryDialog({
   const [statusPage, setStatusPage] = useState(1);
   const [s3Page, setS3Page] = useState(1);
   const [filemakerPage, setFilemakerPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('status');
+  const [activeTab, setActiveTab] = useState(defaultTab);
   
   const statusObserverRef = useRef<HTMLDivElement>(null);
   const s3ObserverRef = useRef<HTMLDivElement>(null);
@@ -64,9 +66,10 @@ export function ServerEventHistoryDialog({
       setS3Page(1);
       setFilemakerPage(1);
       setData(null);
+      setActiveTab(defaultTab);
       fetchEventHistory(true);
     }
-  }, [open, serverId]);
+  }, [open, serverId, defaultTab]);
 
   const fetchEventHistory = async (isInitial = false) => {
     if (!serverId) return;
@@ -212,7 +215,7 @@ export function ServerEventHistoryDialog({
             <Skeleton className="h-64 w-full" />
           </div>
         ) : data ? (
-          <Tabs defaultValue="status" className="w-full" onValueChange={setActiveTab}>
+          <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="status">
                 <TrendingUp className="h-4 w-4 mr-2" />

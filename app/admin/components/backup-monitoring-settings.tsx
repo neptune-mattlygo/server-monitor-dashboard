@@ -41,6 +41,7 @@ export function BackupMonitoringSettings() {
   // Form state
   const [isEnabled, setIsEnabled] = useState(false);
   const [thresholdHours, setThresholdHours] = useState(24);
+  const [thresholdInput, setThresholdInput] = useState('24');
   const [alertOnNeverBackedUp, setAlertOnNeverBackedUp] = useState(true);
   const [emailInput, setEmailInput] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
@@ -53,19 +54,27 @@ export function BackupMonitoringSettings() {
   const fetchConfig = async () => {
     try {
       const response = await fetch('/api/admin/backup-monitoring');
-      if (!response.ok) throw new Error('Failed to fetch configuration');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to fetch configuration:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch configuration');
+      }
       const data = await response.json();
       
       if (data.config) {
         setConfig(data.config);
         setIsEnabled(data.config.is_enabled);
+        setThresholdInput(String(data.config.threshold_hours));
         setThresholdHours(data.config.threshold_hours);
         setAlertOnNeverBackedUp(data.config.alert_on_never_backed_up ?? true);
         setEmailList(data.config.email_recipients || []);
+      } else {
+        console.error('No config data received:', data);
+        setMessage({ type: 'error', text: 'No configuration found' });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch config:', error);
-      setMessage({ type: 'error', text: 'Failed to load configuration' });
+      setMessage({ type: 'error', text: `Failed to load configuration: ${error.message}` });
     } finally {
       setLoading(false);
     }
@@ -235,7 +244,14 @@ export function BackupMonitoringSettings() {
   if (loading) {
     return (
       <Card className="p-6">
-        <div className="text-center text-gray-500">Loading configuration...</div>
+        <div className="text-center text-gray-500">
+          <div className="animate-pulse">Loading configuration...</div>
+          {message && (
+            <div className={`mt-4 p-3 rounded ${message.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-800'}`}>
+              {message.text}
+            </div>
+          )}
+        </div>
       </Card>
     );
   }
@@ -264,11 +280,13 @@ export function BackupMonitoringSettings() {
 
         <div className="space-y-6">
           {/* Enable/Disable */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-4 rounded-lg border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
             <div className="space-y-0.5">
-              <Label htmlFor="enabled">Enable Monitoring</Label>
-              <p className="text-sm text-gray-600">
-                Automatically check for overdue backups
+              <Label htmlFor="enabled" className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                Enable Monitoring
+              </Label>
+              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                {isEnabled ? 'Monitoring is active' : 'Toggle to activate automated backup checks'}
               </p>
             </div>
             <Switch
@@ -285,18 +303,29 @@ export function BackupMonitoringSettings() {
               Alert Threshold (hours)
             </Label>
             <Input
-              id="threshold"
-              type="number"
-              min="1"
-              max="168"
-              value={thresholdHours}
-              onChange={(e) => setThresholdHours(parseInt(e.target.value) || 24)}
+              id="thtext"
+              value={thresholdInput}
+              onChange={(e) => {
+                const value = e.target.value;
+                setThresholdInput(value);
+                const parsed = parseInt(value);
+                if (!isNaN(parsed) && parsed > 0) {
+                  setThresholdHours(parsed);
+                }
+              }}
               className="max-w-xs"
               disabled={!isEnabled}
+              placeholder="Enter hours (e.g., 24)"
             />
-            <p className="text-sm text-gray-600">
-              Alert if a backup hasn't been made within this many hours
-            </p>
+            {thresholdInput.trim() === '' || isNaN(parseInt(thresholdInput)) || parseInt(thresholdInput) <= 0 ? (
+              <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                ⚠️ Please enter a valid number of hours (minimum 1)
+              </p>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Alert if a backup hasn't been made within this many hours
+              </p>
+            )}
           </div>
 
           {/* Alert on Never Backed Up */}
@@ -373,7 +402,7 @@ export function BackupMonitoringSettings() {
           <div className="flex gap-3 pt-4 border-t">
             <Button
               onClick={handleSave}
-              disabled={saving || !isEnabled && emailList.length === 0}
+              disabled={saving || (!isEnabled && emailList.length === 0) || thresholdInput.trim() === '' || isNaN(parseInt(thresholdInput)) || parseInt(thresholdInput) <= 0}
             >
               {saving ? 'Saving...' : 'Save Configuration'}
             </Button>

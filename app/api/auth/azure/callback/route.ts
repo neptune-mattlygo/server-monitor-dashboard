@@ -81,14 +81,12 @@ export async function GET(request: NextRequest) {
     );
 
     console.log('[Azure Callback] User profile saved, creating session...');
-    // Calculate token expiration
-    const expiresAt = tokenResponse.expiresOn 
-      ? new Date(tokenResponse.expiresOn)
-      : new Date(Date.now() + 3600 * 1000);
+    // Set session expiration to 7 days (matching SESSION_MAX_AGE)
+    // We implement sliding session logic in getCurrentUser to keep active users logged in
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     // Create session
-    // Note: MSAL doesn't expose refresh tokens directly for security
-    // We'll rely on session extension in getCurrentUser instead
+    // Note: Session will be automatically extended on use via sliding session logic
     const session = await createSession(
       profile.id,
       tokenResponse.accessToken,

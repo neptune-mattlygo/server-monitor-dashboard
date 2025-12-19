@@ -155,13 +155,20 @@ export async function getCurrentUser(): Promise<Profile | null> {
     return null;
   }
   
-  // If token expires soon (within 5 minutes), proactively refresh
-  const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-  if (expiresAt <= fiveMinutesFromNow && session.refresh_token_hash) {
-    // Refresh in background (don't wait for it)
-    refreshSession(sessionId).catch(err => 
-      console.error('Background token refresh failed:', err)
-    );
+  // Implement sliding session: extend session if it's past halfway to expiration
+  // This keeps active users logged in without requiring manual re-authentication
+  const halfwayPoint = new Date(now.getTime() + (SESSION_MAX_AGE * 1000) / 2);
+  if (expiresAt <= halfwayPoint) {
+    // Extend session by another full period (7 days)
+    const newExpiresAt = new Date(now.getTime() + SESSION_MAX_AGE * 1000);
+    
+    await supabaseAdmin
+      .from('azure_sessions')
+      .update({ expires_at: newExpiresAt.toISOString() })
+      .eq('id', sessionId);
+    
+    // Also extend the cookie
+    await setSessionCookie(sessionId);
   }
 
   return await getUserProfile(session.user_id);
@@ -171,24 +178,18 @@ export async function getCurrentUser(): Promise<Profile | null> {
 async function refreshSession(sessionId: string): Promise<boolean> {
   try {
     const session = await getSession(sessionId);
-    if (!session || !session.refresh_token_hash) return false;
+    if (!session) return false;
 
-    // Get the original refresh token from database
-    // Note: In production, you'd need to decrypt this or use a different approach
-    // For now, we'll import the Azure refresh function
-    const { acquireTokenByRefreshToken } = await import('@/lib/auth/azure-client');
-    
-    // This won't work directly since we're storing the hash, not the token
-    // We need to rethink the storage strategy
-    // For now, let's extend the session instead
-    
-    // Extend session by 7 days
-    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    // Extend session by full SESSION_MAX_AGE (7 days)
+    const newExpiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000);
     
     await supabaseAdmin
       .from('azure_sessions')
       .update({ expires_at: newExpiresAt.toISOString() })
       .eq('id', sessionId);
+    
+    // Also refresh the cookie
+    await setSessionCookie(sessionId);
     
     return true;
   } catch (error) {

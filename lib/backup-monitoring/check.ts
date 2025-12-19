@@ -107,9 +107,8 @@ export async function performBackupCheck() {
     throw new Error('Failed to fetch servers');
   }
 
-  // Get servers that are excluded but due for review (within 7 days or overdue)
-  const reviewDateThreshold = new Date();
-  reviewDateThreshold.setDate(reviewDateThreshold.getDate() + 7); // Check 7 days ahead
+  // Get servers that are excluded but due for review (review date today or overdue)
+  const today = new Date().toISOString().split('T')[0];
   
   const { data: serversDueForReview, error: reviewError } = await supabaseAdmin
     .from('servers')
@@ -122,7 +121,7 @@ export async function performBackupCheck() {
     `)
     .eq('backup_monitoring_excluded', true)
     .not('backup_monitoring_review_date', 'is', null)
-    .lte('backup_monitoring_review_date', reviewDateThreshold.toISOString().split('T')[0])
+    .lte('backup_monitoring_review_date', today)
     .order('backup_monitoring_review_date');
 
   if (reviewError) {
@@ -247,7 +246,25 @@ export async function performBackupCheck() {
       const fileSizeMB = latestBackup.backup_file_size / (1024 * 1024);
       
       smallFileServers.push({
-        id: server.id, OR servers due for review
+        id: server.id,
+        name: server.name,
+        ip_address: server.ip_address,
+        host_id: server.host_id,
+        host: Array.isArray(server.host) ? server.host[0] : server.host,
+        last_backup_at: latestBackup.created_at,
+        last_backup_database: latestBackup.backup_database,
+        hours_since_backup: 0,
+        file_size: latestBackup.backup_file_size,
+        file_size_mb: fileSizeMB,
+        is_small_file: true,
+      });
+    }
+  }
+
+  // Combine overdue and small file servers for alerting
+  const serversNeedingAlert = [...overdueServers, ...smallFileServers];
+
+  // Send email notification if there are servers needing alerts OR servers due for review
   let notificationSent = false;
   let notificationError = null;
 
@@ -260,13 +277,17 @@ export async function performBackupCheck() {
         serversForReview
       );
       notificationSent = true;
-      console.log(`Backup alert email sent to ${config.email_recipients.length} recipients (${overdueServers.length} overdue, ${smallFileServers.length} small files, ${serversForReview.length} due for review
+      console.log('Backup alert email sent to ' + config.email_recipients.length + ' recipients (' + overdueServers.length + ' overdue, ' + smallFileServers.length + ' small files, ' + serversForReview.length + ' due for review)');
+    } catch (emailError: any) {
+      notificationError = emailError.message || 'Failed to send email';
+      console.error('Failed to send backup alert email:', emailError);
+    }
   }
 
   // Log servers with no backup history for debugging
   if (serversWithNoBackups.length > 0) {
     const alertingOn = config.alert_on_never_backed_up ? ' (ALERTING)' : ' (not alerting)';
-    console.log(`⚠️  ${serversWithNoBackups.length} servers have no backup history yet${alertingOn}:`, 
+    console.log('WARNING: ' + serversWithNoBackups.length + ' servers have no backup history yet' + alertingOn + ':', 
       serversWithNoBackups.map(s => s.name).join(', '));
   }
 
@@ -277,32 +298,10 @@ export async function performBackupCheck() {
     servers_overdue: overdueServers.length,
     overdue_server_ids: overdueServers.map(s => s.id),
     threshold_hours: config.threshold_hours,
-    notification_sent: false,
+    notification_sent: notificationSent,
     notification_recipients: config.email_recipients,
-    notification_error: null,
+    notification_error: notificationError,
   };
-
-  // Combine overdue servers and small file servers for email alerts
-  const serversNeedingAlert = [...overdueServers, ...smallFileServers];
-  
-  // Send email if there are servers needing alerts
-  let notificationSent = false;
-  let notificationError = null;
-
-  if (serversNeedingAlert.length > 0) {
-    try {
-      await sendBackupAlertEmail(
-        config.email_recipients,
-        serversNeedingAlert,
-        config.threshold_hours
-      );
-      notificationSent = true;
-      console.log(`Backup alert email sent to ${config.email_recipients.length} recipients (${overdueServers.length} overdue, ${smallFileServers.length} small files)`);
-    } catch (emailError: any) {
-      notificationError = emailError.message || 'Failed to send email';
-      console.error('Failed to send backup alert email:', emailError);
-    }
-  }
 
   // Update result with notification status
   resultData.notification_sent = notificationSent;

@@ -83,7 +83,7 @@ export async function sendBackupAlertEmail(
     });
 
     const client = getResendClient();
-    Build subject line
+    // Build subject line
     const subjectParts = [];
     if (overdueServers.length > 0) {
       subjectParts.push(`${overdueServers.length} Server(s) Overdue`);
@@ -98,8 +98,7 @@ export async function sendBackupAlertEmail(
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: recipients,
       subject,
-      html: generateBackupAlertHTML(serversByHost, sortedHosts, thresholdHours, severityClass, overdueServers.length, serversDueForReview
-      html: generateBackupAlertHTML(serversByHost, sortedHosts, thresholdHours, severityClass, overdueServers.length),
+      html: generateBackupAlertHTML(serversByHost, sortedHosts, thresholdHours, severityClass, overdueServers.length, serversDueForReview),
     });
 
     return { success: true };
