@@ -307,7 +307,7 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
                     </div>
                   </HoverCardContent>
                 </HoverCard>
-                  {!server.bucket && (
+                  {!server.bucket && !server.backup_monitoring_excluded && (
                     <HoverCard>
                       <HoverCardTrigger asChild>
                         <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
