@@ -275,7 +275,7 @@ export function AllServersTable({ servers, statusFilter, hosts }: AllServersTabl
                     </div>
                   </HoverCardContent>
                 </HoverCard>
-                  {!server.bucket && (
+                  {!server.bucket && !server.backup_monitoring_excluded && (
                     <HoverCard>
                       <HoverCardTrigger asChild>
                         <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
