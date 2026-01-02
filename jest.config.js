@@ -23,7 +23,7 @@ const customJestConfig = {
     '!**/cypress/**',
     '!**/__tests__/**',
   ],
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       statements: 70,
       branches: 70,
