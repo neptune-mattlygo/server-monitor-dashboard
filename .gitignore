@@ -6,6 +6,17 @@ apps-mobile/node_modules
 
 # testing
 /coverage
+coverage/
+*.lcov
+.nyc_output
+test-results/
+junit.xml
+
+# Cypress
+cypress/videos
+cypress/screenshots
+cypress/downloads
+.cypress-cache
 
 # next.js
 /.next/

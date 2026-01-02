@@ -12,7 +12,7 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', '<rootDir>/cypress/'],
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
     'components/**/*.{js,jsx,ts,tsx}',
@@ -20,6 +20,39 @@ const customJestConfig = {
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',
+    '!**/cypress/**',
+    '!**/__tests__/**',
+  ],
+  coverageThresholds: {
+    global: {
+      statements: 70,
+      branches: 70,
+      functions: 70,
+      lines: 70,
+    },
+    'lib/auth/**': {
+      statements: 100,
+      branches: 100,
+      functions: 100,
+      lines: 100,
+    },
+    'lib/webhooks/**': {
+      statements: 95,
+      branches: 95,
+      functions: 95,
+      lines: 95,
+    },
+    'app/api/**': {
+      statements: 90,
+      branches: 90,
+      functions: 90,
+      lines: 90,
+    },
+  },
+  coverageReporters: ['text', 'lcov', 'html'],
+  testMatch: [
+    '**/__tests__/**/*.(test|spec).[jt]s?(x)',
+    '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
 };
 
