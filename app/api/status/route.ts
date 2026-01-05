@@ -42,16 +42,6 @@ export async function GET() {
       total: servers?.length || 0,
     };
 
-    // Determine overall status
-    let overallStatus: 'operational' | 'degraded' | 'outage' | 'maintenance' = 'operational';
-    if (statusCounts.down > 0) {
-      overallStatus = 'outage';
-    } else if (statusCounts.degraded > 0) {
-      overallStatus = 'degraded';
-    } else if (statusCounts.maintenance > 0 && statusCounts.up === 0) {
-      overallStatus = 'maintenance';
-    }
-
     // Get active incidents (not resolved)
     const { data: activeIncidents } = await supabaseAdmin
       .from('status_incidents')
@@ -128,6 +118,27 @@ export async function GET() {
 
     const activeIncidentsWithUpdates = processIncidents(activeIncidents || []);
     const resolvedIncidentsWithUpdates = processIncidents(resolvedIncidents || []);
+
+    // Determine overall status based on active incidents only (not server statuses)
+    let overallStatus: 'operational' | 'degraded' | 'outage' | 'maintenance' = 'operational';
+    
+    if (activeIncidentsWithUpdates && activeIncidentsWithUpdates.length > 0) {
+      // Find the highest severity incident
+      const hasOutage = activeIncidentsWithUpdates.some(inc => inc.severity === 'critical');
+      const hasMajor = activeIncidentsWithUpdates.some(inc => inc.severity === 'major');
+      const hasMaintenance = activeIncidentsWithUpdates.some(inc => inc.severity === 'maintenance');
+      
+      if (hasOutage) {
+        overallStatus = 'outage';
+      } else if (hasMajor) {
+        overallStatus = 'degraded';
+      } else if (hasMaintenance) {
+        overallStatus = 'maintenance';
+      } else {
+        // Minor incidents show as degraded
+        overallStatus = 'degraded';
+      }
+    }
 
     // Calculate uptime percentage (last 90 days)
     const ninetyDaysAgo = new Date();
