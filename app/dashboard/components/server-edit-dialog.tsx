@@ -80,6 +80,14 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
   const [loadingCredentials, setLoadingCredentials] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
 
+  // Update editedServer when server prop changes or dialog opens
+  useEffect(() => {
+    if (server) {
+      setEditedServer(server);
+      setError(null);
+    }
+  }, [server?.id, open]);
+
   // Fetch decrypted credentials when dialog opens
   useEffect(() => {
     if (open && server?.id) {
@@ -101,11 +109,6 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
         .finally(() => setLoadingCredentials(false));
     }
   }, [open, server?.id]);
-
-  // Update editedServer when server prop changes
-  if (server && editedServer?.id !== server.id) {
-    setEditedServer(server);
-  }
 
   const handleSave = async () => {
     if (!editedServer) return;
