@@ -144,8 +144,11 @@ export async function PATCH(
     return NextResponse.json({ server });
   } catch (error) {
     console.error('Update server error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update server';
+    const errorDetails = error instanceof Error ? error.stack : String(error);
+    console.error('Error details:', errorDetails);
     return NextResponse.json(
-      { error: 'Failed to update server' },
+      { error: 'Failed to update server', details: errorMessage },
       { status: 500 }
     );
   }
