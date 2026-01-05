@@ -65,8 +65,6 @@ export async function PATCH(
       admin_password 
     } = body;
 
-    console.log('PATCH /api/servers/[id] - Received body:', { admin_url, admin_username, has_password: !!admin_password });
-
     // Validate backup monitoring exclusion fields
     if (backup_monitoring_excluded) {
       if (!backup_monitoring_disabled_reason?.trim()) {
@@ -110,8 +108,6 @@ export async function PATCH(
     }
     if (metadata !== undefined) updateData.metadata = metadata;
 
-    console.log('PATCH /api/servers/[id] - Update data:', updateData);
-
     const { data: server, error } = await supabaseAdmin
       .from('servers')
       .update(updateData)
@@ -120,6 +116,7 @@ export async function PATCH(
       .single();
 
     if (error) {
+      console.error('Failed to update server:', error);
       throw error;
     }
 
@@ -144,11 +141,8 @@ export async function PATCH(
     return NextResponse.json({ server });
   } catch (error) {
     console.error('Update server error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to update server';
-    const errorDetails = error instanceof Error ? error.stack : String(error);
-    console.error('Error details:', errorDetails);
     return NextResponse.json(
-      { error: 'Failed to update server', details: errorMessage },
+      { error: 'Failed to update server' },
       { status: 500 }
     );
   }
