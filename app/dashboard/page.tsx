@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Activity } from 'lucide-react';
+import { Activity, AlertCircle, AlertTriangle } from 'lucide-react';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth/session';
 import { isAdmin } from '@/lib/auth/permissions';
@@ -71,6 +72,13 @@ async function getDashboardData() {
       .from('server_events')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', yesterday.toISOString());
+
+    // Get active incidents
+    const { data: activeIncidents } = await supabaseAdmin
+      .from('status_incidents')
+      .select('id, title, severity, status, started_at')
+      .neq('status', 'resolved')
+      .order('started_at', { ascending: false });
 
     // Fetch last down event, last backup, and last FileMaker event for each server
     const serverIds = allServers.map(s => s.id);
@@ -172,6 +180,7 @@ async function getDashboardData() {
       hosts: enrichedHosts,
       summary,
       recentEventCount: recentEventCount || 0,
+      activeIncidents: activeIncidents || [],
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
@@ -211,6 +220,29 @@ export default async function DashboardPage() {
       <DashboardHeader user={user} isAdmin={userIsAdmin} />
 
       <main className="container mx-auto px-6 py-8">
+        {/* Active Incidents Alert */}
+        {dashboardData?.activeIncidents && dashboardData.activeIncidents.length > 0 && (
+          <Link href="/events" className="block mb-6">
+            <Alert className="border-2 border-red-500 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors cursor-pointer">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
+                    <strong className="font-semibold">
+                      {dashboardData.activeIncidents.length} Active Incident{dashboardData.activeIncidents.length !== 1 ? 's' : ''}
+                    </strong>
+                    <span>
+                      {dashboardData.activeIncidents[0].title}
+                      {dashboardData.activeIncidents.length > 1 && ` and ${dashboardData.activeIncidents.length - 1} more`}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-sm text-red-600 dark:text-red-400 flex-shrink-0 ml-4">Click to view details →</span>
+              </div>
+            </Alert>
+          </Link>
+        )}
+
         <Suspense fallback={<DashboardSkeleton />}>
           {dashboardData && (
             <DashboardClient 
