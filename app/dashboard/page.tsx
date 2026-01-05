@@ -222,7 +222,7 @@ export default async function DashboardPage() {
       <main className="container mx-auto px-6 py-8">
         {/* Active Incidents Alert */}
         {dashboardData?.activeIncidents && dashboardData.activeIncidents.length > 0 && (
-          <Link href="/events" className="block mb-6">
+          <Link href="/dashboard/admin/incidents" className="block mb-6">
             <Alert className="border-2 border-red-500 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors cursor-pointer">
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
