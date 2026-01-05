@@ -253,7 +253,7 @@ export default async function DashboardPage() {
 
           {/* Recent Events */}
           {dashboardData?.recentEventCount !== undefined && dashboardData.recentEventCount > 0 && (
-            <Card className="mt-8 border-0 shadow-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+            <Card className="mt-8 border-0 shadow-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm relative z-0">
               <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/50 dark:to-green-950/50 border-b border-emerald-200/50 dark:border-emerald-700/50">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg shadow-md">
