@@ -6,14 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { HostServerTable } from './host-server-table';
 import { AllServersTable } from './all-servers-table';
 import { AddServerDialog } from './add-server-dialog';
 import { AddHostDialog } from './add-host-dialog';
 import { EditHostDialog } from './edit-host-dialog';
-import { Server, Plus, Database, Pencil, LayoutGrid, List, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { Server, Plus, Database, Pencil, LayoutGrid, List, ChevronDown, ChevronRight, Search, FileDown, ChevronsUpDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import jsPDF from 'jspdf';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -53,6 +59,8 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<ServerStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
+  const [comparisonMode, setComparisonMode] = useState<'exact' | 'above' | 'below'>('exact');
   const [viewMode, setViewMode] = useState<'grouped' | 'all'>('grouped');
   const [addServerDialogOpen, setAddServerDialogOpen] = useState(false);
   const [addHostDialogOpen, setAddHostDialogOpen] = useState(false);
@@ -93,6 +101,148 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
 
   const handleFilterClick = (status: ServerStatus | 'all') => {
     setStatusFilter(statusFilter === status ? 'all' : status);
+  };
+
+  // Get unique FMS versions from all servers
+  const availableVersions = Array.from(
+    new Set(
+      hosts
+        .flatMap(h => h.servers)
+        .map(s => (s as any).fm_server_version)
+        .filter(Boolean)
+    )
+  ).sort();
+
+  // Version comparison helper
+  const compareVersions = (v1: string, v2: string): number => {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+      const part1 = parts1[i] || 0;
+      const part2 = parts2[i] || 0;
+      if (part1 > part2) return 1;
+      if (part1 < part2) return -1;
+    }
+    return 0;
+  };
+
+  // Filter servers based on status, search, and version
+  const applyFilters = (servers: any[]) => {
+    return servers.filter(s => {
+      const matchesStatus = statusFilter === 'all' || s.current_status === statusFilter;
+      const matchesSearch = !searchTerm || 
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.server_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.host_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Version filtering logic
+      let matchesVersion = true;
+      if (selectedVersions.length > 0) {
+        const serverVersion = (s as any).fm_server_version;
+        if (!serverVersion) {
+          matchesVersion = false;
+        } else {
+          if (comparisonMode === 'exact') {
+            matchesVersion = selectedVersions.includes(serverVersion);
+          } else if (comparisonMode === 'above') {
+            matchesVersion = selectedVersions.some(v => compareVersions(serverVersion, v) >= 0);
+          } else if (comparisonMode === 'below') {
+            matchesVersion = selectedVersions.some(v => compareVersions(serverVersion, v) <= 0);
+          }
+        }
+      }
+      
+      return matchesStatus && matchesSearch && matchesVersion;
+    });
+  };
+
+  // Export filtered servers to PDF
+  const handleExportPDF = () => {
+    const allServers = hosts.flatMap(h => h.servers.map(s => ({
+      ...s,
+      host_name: h.name
+    })));
+    const filteredServers = applyFilters(allServers);
+
+    if (filteredServers.length === 0) {
+      toast.error('No servers to export');
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(16);
+    doc.text('Server Monitor - FileMaker Servers Report', 14, 20);
+    
+    // Filters info
+    doc.setFontSize(10);
+    let yPos = 30;
+    doc.text(`Status Filter: ${statusFilter === 'all' ? 'All' : statusFilter}`, 14, yPos);
+    yPos += 6;
+    if (selectedVersions.length > 0) {
+      const modeLabel = comparisonMode === 'exact' ? 'Exactly' : comparisonMode === 'above' ? 'At or above' : 'At or below';
+      doc.text(`Version Filter: ${modeLabel} - ${selectedVersions.join(', ')}`, 14, yPos);
+      yPos += 6;
+    }
+    if (searchTerm) {
+      doc.text(`Search: ${searchTerm}`, 14, yPos);
+      yPos += 6;
+    }
+    doc.text(`Total Servers: ${filteredServers.length}`, 14, yPos);
+    yPos += 10;
+
+    // Table header
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Server Name', 14, yPos);
+    doc.text('Host', 80, yPos);
+    doc.text('FMS Version', 140, yPos);
+    yPos += 7;
+    
+    // Table content
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    
+    filteredServers.forEach((server: any) => {
+      // Check if we need a new page
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+        // Re-add header on new page
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Server Name', 14, yPos);
+        doc.text('Host', 80, yPos);
+        doc.text('FMS Version', 140, yPos);
+        yPos += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+      }
+      
+      doc.text(server.name, 14, yPos);
+      doc.text(server.host_name || '-', 80, yPos);
+      doc.text(server.fm_server_version || '-', 140, yPos);
+      yPos += 6;
+    });
+
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(
+        `Generated: ${new Date().toLocaleString()} - Page ${i} of ${pageCount}`,
+        14,
+        doc.internal.pageSize.height - 10
+      );
+    }
+
+    // Save the PDF
+    const filename = `fms-servers-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
+    toast.success(`Exported ${filteredServers.length} server(s) to PDF`);
   };
 
   const handleEditHost = (host: Host) => {
@@ -353,19 +503,30 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
       </div>
 
       {/* Filter indicator */}
-      {statusFilter !== 'all' && (
+      {(statusFilter !== 'all' || selectedVersions.length > 0) && (
         <div className="mb-6 flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200/50 dark:border-blue-700/50 rounded-lg shadow-sm">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
             <span className="text-sm text-blue-700 dark:text-blue-300">
-              Filtering by: <span className="font-semibold capitalize px-2 py-1 bg-blue-100 dark:bg-blue-800 rounded-md">{statusFilter}</span>
+              Active filters: 
+              {statusFilter !== 'all' && (
+                <span className="font-semibold capitalize px-2 py-1 ml-2 bg-blue-100 dark:bg-blue-800 rounded-md">{statusFilter}</span>
+              )}
+              {selectedVersions.length > 0 && (
+                <span className="font-semibold px-2 py-1 ml-2 bg-blue-100 dark:bg-blue-800 rounded-md">
+                  FMS {comparisonMode === 'exact' ? '' : comparisonMode === 'above' ? '≥' : '≤'} {selectedVersions.join(', ')}
+                </span>
+              )}
             </span>
           </div>
           <button
-            onClick={() => setStatusFilter('all')}
+            onClick={() => {
+              setStatusFilter('all');
+              setSelectedVersions([]);
+            }}
             className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
           >
-            Clear filter
+            Clear all filters
           </button>
         </div>
       )}
@@ -418,6 +579,71 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
                 className="pl-9 border-0 bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-500/30 transition-all duration-200"
               />
             </div>
+          </div>
+
+          <div className="flex gap-3 items-center">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-0 bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-700"
+                >
+                  <span className="text-sm">
+                    {selectedVersions.length > 0 
+                      ? `${selectedVersions.length} version${selectedVersions.length > 1 ? 's' : ''} selected`
+                      : 'Filter by FMS Version'}
+                  </span>
+                  <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-4" align="start">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Filter Mode</Label>
+                    <RadioGroup value={comparisonMode} onValueChange={(v) => setComparisonMode(v as 'exact' | 'above' | 'below')}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="exact" id="exact" />
+                        <Label htmlFor="exact" className="font-normal cursor-pointer">Exactly these versions</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="above" id="above" />
+                        <Label htmlFor="above" className="font-normal cursor-pointer">At or above (≥)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="below" id="below" />
+                        <Label htmlFor="below" className="font-normal cursor-pointer">At or below (≤)</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Select Versions</Label>
+                    <MultiSelect
+                      options={availableVersions.map(v => ({ value: v, label: `FMS ${v}` }))}
+                      selected={selectedVersions}
+                      onChange={setSelectedVersions}
+                      placeholder="Select versions..."
+                      emptyMessage="No versions found"
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={handleExportPDF}
+                  className="gap-2 border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Export PDF
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Export filtered servers to PDF</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           
           <div className="flex gap-3">
@@ -474,14 +700,7 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
           {hosts.map((host) => {
             const filteredHost = {
               ...host,
-              servers: host.servers.filter(s => {
-                const matchesStatus = statusFilter === 'all' || s.current_status === statusFilter;
-                const matchesSearch = !searchTerm || 
-                  s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  s.server_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  s.ip_address?.toLowerCase().includes(searchTerm.toLowerCase());
-                return matchesStatus && matchesSearch;
-              })
+              servers: applyFilters(host.servers.map(s => ({ ...s, host_name: host.name })))
             };
 
             // Skip rendering hosts with no matching servers
@@ -616,20 +835,13 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
           </CardHeader>
           <CardContent>
             <AllServersTable 
-              servers={hosts.flatMap(h => h.servers.map(s => ({
+              servers={applyFilters(hosts.flatMap(h => h.servers.map(s => ({
                 ...s,
                 host_name: h.name,
                 host_region: h.regions?.name || null
-              }))).filter(s => {
-                const matchesStatus = statusFilter === 'all' || s.current_status === statusFilter;
-                const matchesSearch = !searchTerm || 
-                  s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  s.server_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  s.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  s.host_name?.toLowerCase().includes(searchTerm.toLowerCase());
-                return matchesStatus && matchesSearch;
-              })}
+              }))))}
               statusFilter={statusFilter}
+              versionFilter={selectedVersions}
               hosts={hosts}
             />
           </CardContent>
