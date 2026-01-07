@@ -195,14 +195,14 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
 
     // Table header
     doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text('Server Name', 14, yPos);
     doc.text('Host', 80, yPos);
     doc.text('FMS Version', 140, yPos);
     yPos += 7;
     
     // Table content
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     
     filteredServers.forEach((server: any) => {
@@ -212,12 +212,12 @@ export function DashboardClient({ hosts, summary }: DashboardClientProps) {
         yPos = 20;
         // Re-add header on new page
         doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.text('Server Name', 14, yPos);
         doc.text('Host', 80, yPos);
         doc.text('FMS Version', 140, yPos);
         yPos += 7;
-        doc.setFont(undefined, 'normal');
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
       }
       
