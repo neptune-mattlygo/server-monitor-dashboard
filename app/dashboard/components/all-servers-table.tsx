@@ -67,7 +67,7 @@ interface Server {
 interface AllServersTableProps {
   servers: Server[];
   statusFilter: ServerStatus | 'all';
-  versionFilter: string;
+  versionFilter: string[];
   hosts: Array<{ id: string; name: string }>;
 }
 
