@@ -238,6 +238,7 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
             <TableHead className="w-[80px]">Uptime</TableHead>
             <TableHead className="w-[100px]">Last Backup</TableHead>
             <TableHead className="w-[150px]">Database</TableHead>
+            <TableHead className="w-[100px]">FMS Version</TableHead>
             <TableHead className="w-[120px]">Last FileMaker Event</TableHead>
             <TableHead className="w-[120px]">Actions</TableHead>
           </TableRow>
@@ -410,6 +411,9 @@ export function HostServerTable({ host, allHosts, onDragStart, onDragEnd, select
               </TableCell>
               <TableCell className="text-sm font-mono text-xs truncate max-w-[150px]">
                 {server.last_backup?.backup_database || '-'}
+              </TableCell>
+              <TableCell className="text-sm font-medium">
+                {server.fm_server_version || '-'}
               </TableCell>
               <TableCell className="text-sm text-gray-600">
                 {server.last_filemaker_event ? (
