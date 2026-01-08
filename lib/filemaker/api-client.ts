@@ -566,15 +566,26 @@ export async function updateEmailSettings(
   
   try {
     const payload = {
+      customHostName: emailSettings.customHostName,
+      emailNotification: emailSettings.emailNotification,
       smtpServerAddress: emailSettings.smtpServerAddress,
       smtpServerPort: emailSettings.smtpServerPort,
-      smtpUsername: emailSettings.smtpUsername,
+      smtpAccount: emailSettings.smtpAccount,
       smtpPassword: smtpPassword,
       emailSenderAddress: emailSettings.emailSenderAddress,
+      emailReplyAddress: emailSettings.emailReplyAddress,
       emailRecipients: emailSettings.emailRecipients,
       smtpAuthType: emailSettings.smtpAuthType,
+      smtpOAuthType: emailSettings.smtpOAuthType,
       smtpSecurity: emailSettings.smtpSecurity,
       notifyLevel: emailSettings.notifyLevel,
+      emailGoogleServiceAccount: emailSettings.emailGoogleServiceAccount,
+      emailGooglePrivateKey: emailSettings.emailGooglePrivateKey,
+      emailGoogleUserId: emailSettings.emailGoogleUserId,
+      emailMicrosoftClientId: emailSettings.emailMicrosoftClientId,
+      emailMicrosoftClientSecret: emailSettings.emailMicrosoftClientSecret,
+      emailMicrosoftTenantId: emailSettings.emailMicrosoftTenantId,
+      emailMicrosoftPrincipalName: emailSettings.emailMicrosoftPrincipalName,
     };
 
     await makeAuthenticatedRequest(
