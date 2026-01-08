@@ -24,6 +24,8 @@ interface SettingsResponse {
   lastError?: string;
   error?: string;
   concurrentUpdateWarning?: boolean;
+  warnings?: string[];
+  failures?: { endpoint: string; reason: string }[];
 }
 
 interface SettingChangeEvent {
@@ -43,6 +45,8 @@ export function SettingsPanel({ serverId }: SettingsPanelProps) {
   const [settings, setSettings] = useState<FileMakerSettings | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [failures, setFailures] = useState<{ endpoint: string; reason: string }[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [concurrentWarning, setConcurrentWarning] = useState(false);
   const [recentChanges, setRecentChanges] = useState<SettingChangeEvent[]>([]);
@@ -71,6 +75,8 @@ export function SettingsPanel({ serverId }: SettingsPanelProps) {
 
       setSettings(data.settings || null);
       setLastUpdated(data.lastUpdated || null);
+      setWarnings(data.warnings || []);
+      setFailures(data.failures || []);
       setHasSmtpPassword(data.hasSmtpPassword || false);
       setError(null);
 
@@ -175,6 +181,20 @@ export function SettingsPanel({ serverId }: SettingsPanelProps) {
         </Alert>
       )}
 
+      {/* Warnings for partial data (excluding Email and PHP which show inline) */}
+      {warnings.filter(w => !w.includes('Email Settings') && !w.includes('PHP')).length > 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              {warnings.filter(w => !w.includes('Email Settings') && !w.includes('PHP')).map((warning, index) => (
+                <p key={index}>{warning}</p>
+              ))}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Error Display */}
       {error && (
         <Alert variant="destructive">
@@ -232,6 +252,7 @@ export function SettingsPanel({ serverId }: SettingsPanelProps) {
           <WebPublishingSection 
             settings={settings.webPublishing} 
             onSave={handleSave}
+            phpFailure={failures.find(f => f.endpoint === 'PHP')}
           />
           <SecuritySection 
             settings={settings.security} 
@@ -242,6 +263,7 @@ export function SettingsPanel({ serverId }: SettingsPanelProps) {
             serverId={serverId}
             hasSmtpPassword={hasSmtpPassword}
             onSave={handleSave}
+            emailFailure={failures.find(f => f.endpoint === 'Email Settings')}
           />
         </div>
       ) : (

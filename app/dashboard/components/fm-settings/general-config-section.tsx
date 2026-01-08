@@ -18,7 +18,7 @@ interface GeneralConfigSectionProps {
 // Validation schema based on FileMaker 19 limits
 const validationRules = {
   cacheSize: { min: 1, max: 1024, label: 'Cache size must be between 1 and 1024 MB' },
-  maxFiles: { min: 1, max: 125, label: 'Max files must be between 1 and 125' },
+  maxFiles: { min: 1, max: 250, label: 'Max files must be between 1 and 250' },
   maxProConnections: { min: 0, max: 2000, label: 'Max connections must be between 0 and 2000 (0 = unlimited)' },
   maxPSOS: { min: 0, max: 1000, label: 'Max PSOS must be between 0 and 1000 (0 = disabled)' },
 };
@@ -105,7 +105,7 @@ export function GeneralConfigSection({ settings, onSave }: GeneralConfigSectionP
           </div>
           <Button
             onClick={() => validateAndSave('cacheSize')}
-            disabled={saving.cacheSize || localSettings.cacheSize === settings.cacheSize}
+            disabled={saving.cacheSize || !settings || localSettings.cacheSize === settings.cacheSize}
             size="sm"
           >
             {saving.cacheSize ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
@@ -133,7 +133,7 @@ export function GeneralConfigSection({ settings, onSave }: GeneralConfigSectionP
           </div>
           <Button
             onClick={() => validateAndSave('maxFiles')}
-            disabled={saving.maxFiles || localSettings.maxFiles === settings.maxFiles}
+            disabled={saving.maxFiles || !settings || localSettings.maxFiles === settings.maxFiles}
             size="sm"
           >
             {saving.maxFiles ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
@@ -162,7 +162,7 @@ export function GeneralConfigSection({ settings, onSave }: GeneralConfigSectionP
           </div>
           <Button
             onClick={() => validateAndSave('maxProConnections')}
-            disabled={saving.maxProConnections || localSettings.maxProConnections === settings.maxProConnections}
+            disabled={saving.maxProConnections || !settings || localSettings.maxProConnections === settings.maxProConnections}
             size="sm"
           >
             {saving.maxProConnections ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
@@ -191,7 +191,7 @@ export function GeneralConfigSection({ settings, onSave }: GeneralConfigSectionP
           </div>
           <Button
             onClick={() => validateAndSave('maxPSOS')}
-            disabled={saving.maxPSOS || localSettings.maxPSOS === settings.maxPSOS}
+            disabled={saving.maxPSOS || !settings || localSettings.maxPSOS === settings.maxPSOS}
             size="sm"
           >
             {saving.maxPSOS ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
@@ -211,7 +211,7 @@ export function GeneralConfigSection({ settings, onSave }: GeneralConfigSectionP
           />
           <Button
             onClick={() => validateAndSave('useSchedules')}
-            disabled={saving.useSchedules || localSettings.useSchedules === settings.useSchedules}
+            disabled={saving.useSchedules || !settings || localSettings.useSchedules === settings.useSchedules}
             size="sm"
           >
             {saving.useSchedules ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}

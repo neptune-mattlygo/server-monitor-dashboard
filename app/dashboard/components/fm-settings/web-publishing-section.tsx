@@ -5,15 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WebPublishing } from '@/lib/supabase';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 interface WebPublishingSectionProps {
   settings: WebPublishing;
   onSave: (category: string, settingKey: string, value: any) => Promise<{ success: boolean }>;
+  phpFailure?: { endpoint: string; reason: string };
 }
 
-export function WebPublishingSection({ settings, onSave }: WebPublishingSectionProps) {
+export function WebPublishingSection({ settings, onSave, phpFailure }: WebPublishingSectionProps) {
   const [localSettings, setLocalSettings] = useState(settings);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,24 +53,33 @@ export function WebPublishingSection({ settings, onSave }: WebPublishingSectionP
       </CardHeader>
       <CardContent className="space-y-4">
         {/* PHP */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="phpEnabled">PHP Web Publishing</Label>
-            <p className="text-sm text-muted-foreground">Custom Web Publishing with PHP</p>
-            {errors.phpEnabled && (
-              <p className="text-sm text-destructive">{errors.phpEnabled}</p>
-            )}
+        {phpFailure ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>PHP Web Publishing:</strong> {phpFailure.reason || 'PHP settings are not available on this FileMaker Server.'}
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="phpEnabled">PHP Web Publishing</Label>
+              <p className="text-sm text-muted-foreground">Custom Web Publishing with PHP</p>
+              {errors.phpEnabled && (
+                <p className="text-sm text-destructive">{errors.phpEnabled}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {saving.phpEnabled && <Loader2 className="h-4 w-4 animate-spin" />}
+              <Switch
+                id="phpEnabled"
+                checked={localSettings.phpEnabled}
+                onCheckedChange={(checked) => handleToggle('phpEnabled', checked)}
+                disabled={saving.phpEnabled}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {saving.phpEnabled && <Loader2 className="h-4 w-4 animate-spin" />}
-            <Switch
-              id="phpEnabled"
-              checked={localSettings.phpEnabled}
-              onCheckedChange={(checked) => handleToggle('phpEnabled', checked)}
-              disabled={saving.phpEnabled}
-            />
-          </div>
-        </div>
+        )}
 
         {/* XML */}
         <div className="flex items-center justify-between">

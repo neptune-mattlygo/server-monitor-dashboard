@@ -100,14 +100,27 @@ export interface SecurityConfig {
 }
 
 export interface EmailNotifications {
+  customHostName: string;
+  emailNotification: number; // 0=Disabled, 1=Enabled
   smtpServerAddress: string;
   smtpServerPort: number; // 1-65535
-  smtpUsername: string;
+  smtpAccount: string; // Encrypted SMTP account/username
   emailSenderAddress: string;
+  emailReplyAddress: string;
   emailRecipients: string; // Comma-separated emails
-  smtpAuthType: 0 | 1 | 2 | 3; // 0=None, 1=Login, 2=Plain, 3=CRAM-MD5
-  smtpSecurity: 0 | 1 | 2 | 3; // 0=None, 1=SSL, 2=TLS, 3=STARTTLS
-  notifyLevel: 0 | 1 | 2; // 0=None, 1=Errors, 2=All
+  smtpAuthType: number; // 0=None, 1=Login, 2=Plain, 3=CRAM-MD5, 6=OAuth
+  smtpOAuthType: number; // 0=None, 3=Google, 4=Microsoft
+  smtpSecurity: number; // 0=None, 1=SSL, 2=TLS, 3=STARTTLS
+  notifyLevel: number; // 0=None, 1=Errors, 2=All
+  // Google OAuth fields
+  emailGoogleServiceAccount: string;
+  emailGooglePrivateKey: string;
+  emailGoogleUserId: string;
+  // Microsoft OAuth fields
+  emailMicrosoftClientId: string;
+  emailMicrosoftClientSecret: string;
+  emailMicrosoftTenantId: string;
+  emailMicrosoftPrincipalName: string;
   // Note: smtpPassword stored separately in fm_smtp_password column (encrypted)
 }
 

@@ -488,6 +488,7 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
                 </div>
               )}
             </div>
+          </TabsContent>
 
           <TabsContent value="settings" className="space-y-4 mt-4">
             <div className="max-h-[600px] overflow-y-auto pr-2">
@@ -499,7 +500,6 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
                 </div>
               )}
             </div>
-          </TabsContent>
           </TabsContent>
         </Tabs>
 

@@ -3,9 +3,20 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [config, setConfig] = useState<{ company_name: string; logo_url: string | null; logo_dark_url?: string | null } | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [azureEnabled, setAzureEnabled] = useState(false);
 
   useEffect(() => {
     fetch('/api/status')
@@ -18,10 +29,47 @@ export default function LoginPage() {
       .catch(() => {
         setConfig({ company_name: 'Server Monitor', logo_url: null });
       });
+    
+    // Check if Azure AD is configured
+    fetch('/api/auth/azure/status')
+      .then((res) => res.json())
+      .then((data) => {
+        setAzureEnabled(data.enabled === true);
+      })
+      .catch(() => {
+        setAzureEnabled(false);
+      });
   }, []);
 
   const handleAzureLogin = () => {
     window.location.href = '/api/auth/azure/login';
+  };
+
+  const handleLocalLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/local/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+
+      // Redirect to dashboard on success
+      router.push('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,6 +97,59 @@ export default function LoginPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Local Login Form */}
+          <form onSubmit={handleLocalLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="user@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Signing in...' : 'Sign in'}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-gray-800 px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          {/* Azure AD Login */}
           <Button
             type="button"
             variant="outline"
@@ -64,10 +165,10 @@ export default function LoginPage() {
             Sign in with Microsoft
           </Button>
 
-          <div className="text-center text-sm">
+          <div className="text-center text-sm space-y-2">
             <a
               href="/status"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline block"
             >
               View Public Status Page
             </a>

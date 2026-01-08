@@ -18,8 +18,16 @@ export async function GET(
   try {
     const user = await getCurrentUser();
     
-    if (!user || !isAdmin(user)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    console.log('[FM Settings GET] User:', user ? { id: user.id, email: user.email, role: user.role } : 'null');
+    
+    if (!user) {
+      console.log('[FM Settings GET] No user found - returning 401');
+      return NextResponse.json({ error: 'Unauthorized - not logged in' }, { status: 401 });
+    }
+    
+    if (!isAdmin(user)) {
+      console.log('[FM Settings GET] User is not admin - returning 403');
+      return NextResponse.json({ error: 'Unauthorized - admin role required' }, { status: 403 });
     }
 
     const { id: serverId } = await params;
@@ -51,7 +59,13 @@ export async function GET(
     try {
       username = server.admin_username;
       password = decrypt(server.admin_password);
+      console.log('[FM Settings GET] Credentials decrypted:', {
+        username,
+        passwordLength: password.length,
+        passwordStart: password.substring(0, 3)
+      });
     } catch (error) {
+      console.error('[FM Settings GET] Failed to decrypt credentials:', error);
       return NextResponse.json({ 
         error: 'Failed to decrypt credentials',
         settings: server.fm_settings,
@@ -60,14 +74,39 @@ export async function GET(
       }, { status: 500 });
     }
 
+    // Ensure URL has protocol
+    let adminUrl = server.admin_url.trim();
+    if (!adminUrl.startsWith('http://') && !adminUrl.startsWith('https://')) {
+      adminUrl = `https://${adminUrl}`;
+    }
+    
+    // Extract base server URL for API calls (remove admin-console path if present)
+    const url = new URL(adminUrl);
+    const baseUrl = `${url.protocol}//${url.host}`;
+
     // Fetch settings from FileMaker Server
     try {
-      const settings = await fetchAllSettings(
+      const { settings, failures } = await fetchAllSettings(
         serverId,
-        server.admin_url,
+        baseUrl,
         username,
         password
       );
+
+      // Collect warnings for failed endpoints
+      const warnings: string[] = [];
+      
+      for (const failure of failures) {
+        if (failure.endpoint === 'Email Settings') {
+          warnings.push('Email notification settings are not available on this FileMaker Server version.');
+        } else if (failure.endpoint === 'PHP' && failure.reason?.includes('PHP config file does not exist')) {
+          // PHP not installed is expected, don't warn unless it's needed
+          warnings.push('PHP is not installed on this server.');
+        } else if (failure.endpoint !== 'PHP') {
+          // Warn about other unexpected failures
+          warnings.push(`${failure.endpoint} settings could not be retrieved: ${failure.reason}`);
+        }
+      }
 
       // Get SMTP password if it exists and decrypt it
       const { data: smtpData } = await supabaseAdmin
@@ -114,10 +153,12 @@ export async function GET(
         settings: settingsWithMaskedPassword,
         hasSmtpPassword: !!smtpPassword,
         lastUpdated: new Date().toISOString(),
-        updatedBy: user.id,
+        warnings: warnings.length > 0 ? warnings : undefined,
+        failures: failures, // Pass failures to frontend
       });
 
     } catch (error) {
+      console.error('[FM Settings GET] Error occurred:', error);
       const errorMessage = error instanceof FileMakerApiError 
         ? error.message 
         : 'Failed to fetch settings from FileMaker Server';
@@ -214,6 +255,16 @@ export async function PATCH(
       }, { status: 500 });
     }
 
+    // Ensure URL has protocol
+    let adminUrl = server.admin_url.trim();
+    if (!adminUrl.startsWith('http://') && !adminUrl.startsWith('https://')) {
+      adminUrl = `https://${adminUrl}`;
+    }
+    
+    // Extract base server URL for API calls (remove admin-console path if present)
+    const url = new URL(adminUrl);
+    const baseUrl = `${url.protocol}//${url.host}`;
+
     // Get current settings for old value tracking
     const oldSettings = server.fm_settings || {};
     const oldValue = oldSettings[category]?.[settingKey];
@@ -224,7 +275,7 @@ export async function PATCH(
         // Fetch current settings to merge with update
         const currentSettings = await fetchAllSettings(
           serverId,
-          server.admin_url,
+          baseUrl,
           username,
           password
         );
@@ -256,7 +307,7 @@ export async function PATCH(
         // Update all email settings (FileMaker API requires all fields)
         await updateEmailSettings(
           serverId,
-          server.admin_url,
+          baseUrl,
           username,
           password,
           updatedEmailSettings,
@@ -276,7 +327,7 @@ export async function PATCH(
         // Update single setting for non-email categories
         await updateSetting(
           serverId,
-          server.admin_url,
+          baseUrl,
           username,
           password,
           category,
@@ -288,7 +339,7 @@ export async function PATCH(
       // Refetch all settings to get latest state
       const updatedSettings = await fetchAllSettings(
         serverId,
-        server.admin_url,
+        baseUrl,
         username,
         password
       );
