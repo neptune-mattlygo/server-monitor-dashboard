@@ -137,21 +137,31 @@ export function EmailSection({ settings, serverId, hasSmtpPassword, onSave, emai
     setErrors({ ...errors, [key]: '' });
 
     try {
-      // For SMTP password, use the password state
-      const saveValue = key === 'smtpPassword' ? smtpPassword : value;
-      await onSave('email', key, saveValue);
-      
-      if (key === 'smtpPassword') {
-        // After saving password, hide it again
-        setShowPassword(false);
-        setPasswordFetched(false);
-        setSmtpPassword('');
-      }
+      await onSave('email', key, value);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save';
       setErrors({ ...errors, [key]: message });
     } finally {
       setSaving({ ...saving, [key]: false });
+    }
+  };
+
+  const saveSmtpPassword = async () => {
+    setSaving({ ...saving, smtpPassword: true });
+    setErrors({ ...errors, smtpPassword: '' });
+
+    try {
+      await onSave('email', 'smtpPassword' as any, smtpPassword);
+      
+      // After saving password, hide it again
+      setShowPassword(false);
+      setPasswordFetched(false);
+      setSmtpPassword('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save';
+      setErrors({ ...errors, smtpPassword: message });
+    } finally {
+      setSaving({ ...saving, smtpPassword: false });
     }
   };
 
@@ -338,7 +348,7 @@ export function EmailSection({ settings, serverId, hasSmtpPassword, onSave, emai
             )}
           </div>
           <Button
-            onClick={() => validateAndSave('smtpPassword')}
+            onClick={saveSmtpPassword}
             disabled={saving.smtpPassword || !passwordFetched || smtpPassword === ''}
             size="sm"
           >
