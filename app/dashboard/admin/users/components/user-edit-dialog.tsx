@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -27,6 +28,8 @@ interface User {
   id: string;
   email: string;
   display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   role: 'admin' | 'editor' | 'viewer';
 }
 
@@ -37,14 +40,24 @@ interface Props {
   onSuccess: () => void;
 }
 
-export function UserRoleDialog({ open, onOpenChange, user, onSuccess }: Props) {
+export function UserEditDialog({ open, onOpenChange, user, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    display_name: '',
+    role: 'viewer' as 'admin' | 'editor' | 'viewer',
+  });
 
   useEffect(() => {
     if (user) {
-      setSelectedRole(user.role);
+      setFormData({
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        display_name: user.display_name || '',
+        role: user.role,
+      });
     }
   }, [user]);
 
@@ -61,16 +74,16 @@ export function UserRoleDialog({ open, onOpenChange, user, onSuccess }: Props) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ role: selectedRole }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update user role');
+        throw new Error(data.error || 'Failed to update user');
       }
 
-      toast.success('User role updated successfully');
+      toast.success('User updated successfully');
       onSuccess();
     } catch (err: any) {
       setError(err.message);
@@ -98,12 +111,12 @@ export function UserRoleDialog({ open, onOpenChange, user, onSuccess }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit User Role</DialogTitle>
+          <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>
-            Change the role and permissions for {user.display_name || user.email}
+            Update user information and role for {user.email}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div>
@@ -118,9 +131,41 @@ export function UserRoleDialog({ open, onOpenChange, user, onSuccess }: Props) {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="first_name">First Name</Label>
+              <Input
+                id="first_name"
+                value={formData.first_name}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                placeholder="John"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="last_name">Last Name</Label>
+              <Input
+                id="last_name"
+                value={formData.last_name}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                placeholder="Doe"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="display_name">Display Name</Label>
+            <Input
+              id="display_name"
+              value={formData.display_name}
+              onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+              placeholder="John Doe"
+            />
+          </div>
+
           <div className="space-y-3">
-            <Label htmlFor="role">New Role</Label>
-            <Select value={selectedRole} onValueChange={(value: any) => setSelectedRole(value)}>
+            <Label htmlFor="role">Role</Label>
+            <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
               <SelectTrigger id="role">
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
@@ -139,14 +184,12 @@ export function UserRoleDialog({ open, onOpenChange, user, onSuccess }: Props) {
               </SelectContent>
             </Select>
             
-            {selectedRole && (
-              <Alert className="mt-3">
-                <AlertDescription className="text-sm">
-                  <span className="font-semibold capitalize">{selectedRole}:</span>{' '}
-                  {roleDescriptions[selectedRole]}
-                </AlertDescription>
-              </Alert>
-            )}
+            <Alert className="mt-3">
+              <AlertDescription className="text-sm">
+                <span className="font-semibold capitalize">{formData.role}:</span>{' '}
+                {roleDescriptions[formData.role]}
+              </AlertDescription>
+            </Alert>
           </div>
 
           {error && (
@@ -164,11 +207,8 @@ export function UserRoleDialog({ open, onOpenChange, user, onSuccess }: Props) {
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={loading || selectedRole === user.role}
-            >
-              {loading ? 'Updating...' : 'Update Role'}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Updating...' : 'Update User'}
             </Button>
           </div>
         </form>
@@ -176,3 +216,4 @@ export function UserRoleDialog({ open, onOpenChange, user, onSuccess }: Props) {
     </Dialog>
   );
 }
+

@@ -11,8 +11,9 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit } from 'lucide-react';
-import { UserRoleDialog } from './user-role-dialog';
+import { Edit, KeyRound } from 'lucide-react';
+import { UserEditDialog } from './user-edit-dialog';
+import { ResetPasswordDialog } from './reset-password-dialog';
 import { getRoleBadgeColor } from '@/lib/auth/permissions';
 
 interface User {
@@ -35,6 +36,7 @@ interface Props {
 
 export function UsersTable({ users, onUserUpdated }: Props) {
   const [editUser, setEditUser] = useState<User | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
 
   const validUsers = (users || []).filter(u => u != null);
 
@@ -98,14 +100,26 @@ export function UsersTable({ users, onUserUpdated }: Props) {
                   {formatDate(user.created_at)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditUser(user)}
-                    title="Edit user role"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditUser(user)}
+                      title="Edit user"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {user.auth_provider === 'local' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setResetPasswordUser(user)}
+                        title="Reset password"
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -113,13 +127,22 @@ export function UsersTable({ users, onUserUpdated }: Props) {
         </Table>
       </div>
 
-      <UserRoleDialog
+      <UserEditDialog
         open={!!editUser}
-        onOpenChange={(open) => !open && setEditUser(null)}
+        onOpenChange={(open: boolean) => !open && setEditUser(null)}
         user={editUser}
         onSuccess={() => {
           setEditUser(null);
           onUserUpdated();
+        }}
+      />
+
+      <ResetPasswordDialog
+        open={!!resetPasswordUser}
+        onOpenChange={(open: boolean) => !open && setResetPasswordUser(null)}
+        user={resetPasswordUser}
+        onSuccess={() => {
+          setResetPasswordUser(null);
         }}
       />
     </>
