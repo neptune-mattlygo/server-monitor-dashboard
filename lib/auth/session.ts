@@ -246,12 +246,12 @@ export async function upsertUserProfile(
     return updated;
   }
 
-  // Create new profile (all Azure-authenticated users are admins)
+  // Create new profile (all Azure-authenticated users are editors)
   const { count } = await supabaseAdmin
     .from('profiles')
     .select('*', { count: 'exact', head: true });
 
-  const role = 'admin';
+  const role = 'editor';
 
   // Generate UUID for the profile
   const { data: uuidResult } = await supabaseAdmin.rpc('gen_random_uuid');

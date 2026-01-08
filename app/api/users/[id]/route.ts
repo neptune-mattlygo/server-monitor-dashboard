@@ -54,15 +54,31 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { role } = body;
+    const { role, first_name, last_name, display_name } = body;
 
-    if (!role || !['admin', 'editor', 'viewer'].includes(role)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    const updateData: any = {};
+    
+    if (role !== undefined) {
+      if (!['admin', 'editor', 'viewer'].includes(role)) {
+        return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+      }
+      updateData.role = role;
+    }
+    
+    if (first_name !== undefined) updateData.first_name = first_name;
+    if (last_name !== undefined) updateData.last_name = last_name;
+    if (display_name !== undefined) updateData.display_name = display_name;
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No fields to update' },
+        { status: 400 }
+      );
     }
 
     const { data: updatedUser, error } = await supabaseAdmin
       .from('profiles')
-      .update({ role })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -73,7 +89,7 @@ export async function PATCH(
 
     // Log audit event
     await logAuditEvent(user.id, 'update', 'user', id, {
-      role,
+      ...updateData,
       updated_by: user.email,
     });
 
