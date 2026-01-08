@@ -273,7 +273,7 @@ export async function PATCH(
       // Special handling for email settings (requires SMTP password)
       if (category === 'email') {
         // Fetch current settings to merge with update
-        const currentSettings = await fetchAllSettings(
+        const { settings: currentSettings } = await fetchAllSettings(
           serverId,
           baseUrl,
           username,
