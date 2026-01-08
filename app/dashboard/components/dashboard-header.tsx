@@ -166,6 +166,12 @@ export function DashboardHeader({ user, isAdmin = false }: DashboardHeaderProps)
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="hover:bg-indigo-50 dark:hover:bg-indigo-950/50">
+                    <a href="/dashboard/admin/users" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4 text-indigo-500" />
+                      <span className="text-gray-700 dark:text-gray-300">User Management</span>
+                    </a>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild className="hover:bg-gray-50 dark:hover:bg-gray-950/50">
                     <a href="/dashboard/admin/settings" className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4 text-gray-500" />

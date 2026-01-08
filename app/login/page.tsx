@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [azureEnabled, setAzureEnabled] = useState(false);
+  const [showLocalAuth, setShowLocalAuth] = useState(false);
 
   useEffect(() => {
     fetch('/api/status')
@@ -103,57 +104,11 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          {/* Local Login Form */}
-          <form onSubmit={handleLocalLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="user@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-gray-800 px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          {/* Azure AD Login */}
+          {/* Azure AD Login - Primary Option */}
           <Button
             type="button"
-            variant="outline"
-            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 hover:text-gray-900 border-gray-300"
+            variant="default"
+            className="w-full flex items-center justify-center gap-2"
             onClick={handleAzureLogin}
           >
             <svg className="w-5 h-5" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -164,6 +119,74 @@ export default function LoginPage() {
             </svg>
             Sign in with Microsoft
           </Button>
+
+          {/* Toggle for Local Auth */}
+          {!showLocalAuth ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-sm text-muted-foreground hover:text-foreground"
+              onClick={() => setShowLocalAuth(true)}
+            >
+              Use username and password instead
+            </Button>
+          ) : (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white dark:bg-gray-800 px-2 text-muted-foreground">
+                    Or
+                  </span>
+                </div>
+              </div>
+
+              {/* Local Login Form */}
+              <form onSubmit={handleLocalLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="user@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Signing in...' : 'Sign in'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-sm"
+                  onClick={() => setShowLocalAuth(false)}
+                >
+                  Back to Microsoft sign in
+                </Button>
+              </form>
+            </>
+          )}
 
           <div className="text-center text-sm space-y-2">
             <a
