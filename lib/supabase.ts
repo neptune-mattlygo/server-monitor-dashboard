@@ -61,15 +61,74 @@ export type Server = {
   backup_monitoring_excluded?: boolean;
   backup_monitoring_disabled_reason?: string | null;
   backup_monitoring_review_date?: string | null;
+  fm_settings: FileMakerSettings | null;
+  fm_settings_updated_at: string | null;
+  fm_settings_error: string | null;
+  fm_smtp_password: string | null; // Encrypted
+  fm_settings_updated_by: string | null;
   created_at: string;
   updated_at: string;
 };
 
+// FileMaker Server Settings Types
+export interface FileMakerSettings {
+  general: GeneralConfig;
+  webPublishing: WebPublishing;
+  security: SecurityConfig;
+  email: EmailNotifications;
+}
+
+export interface GeneralConfig {
+  cacheSize: number; // 1-1024 MB (FileMaker 19 limit)
+  maxFiles: number; // 1-125 (FileMaker 19 limit)
+  maxProConnections: number; // 0-2000 (0 = unlimited)
+  maxPSOS: number; // 0-1000 (0 = disabled)
+  useSchedules: boolean;
+}
+
+export interface WebPublishing {
+  phpEnabled: boolean;
+  xmlEnabled: boolean;
+  xdbcEnabled: boolean; // ODBC/JDBC
+  dataApiEnabled: boolean; // FileMaker Data API
+  odataEnabled: boolean;
+  webDirectEnabled: boolean;
+}
+
+export interface SecurityConfig {
+  requireSecureDB: boolean;
+}
+
+export interface EmailNotifications {
+  customHostName: string;
+  emailNotification: number; // 0=Disabled, 1=Enabled
+  smtpServerAddress: string;
+  smtpServerPort: number; // 1-65535
+  smtpAccount: string; // Encrypted SMTP account/username
+  emailSenderAddress: string;
+  emailReplyAddress: string;
+  emailRecipients: string; // Comma-separated emails
+  smtpAuthType: number; // 0=None, 1=Login, 2=Plain, 3=CRAM-MD5, 6=OAuth
+  smtpOAuthType: number; // 0=None, 3=Google, 4=Microsoft
+  smtpSecurity: number; // 0=None, 1=SSL, 2=TLS, 3=STARTTLS
+  notifyLevel: number; // 0=None, 1=Errors, 2=All
+  // Google OAuth fields
+  emailGoogleServiceAccount: string;
+  emailGooglePrivateKey: string;
+  emailGoogleUserId: string;
+  // Microsoft OAuth fields
+  emailMicrosoftClientId: string;
+  emailMicrosoftClientSecret: string;
+  emailMicrosoftTenantId: string;
+  emailMicrosoftPrincipalName: string;
+  // Note: smtpPassword stored separately in fm_smtp_password column (encrypted)
+}
+
 export type ServerEvent = {
   id: string;
   server_id: string;
-  event_type: 'status_change' | 'backup' | 's3_restore' | 'filemaker_event';
-  event_source: 'uptimerobot' | 'filemaker' | 'backup_system' | 'aws_s3' | 'manual';
+  event_type: 'status_change' | 'backup' | 's3_restore' | 'filemaker_event' | 'setting_change';
+  event_source: 'uptimerobot' | 'filemaker' | 'backup_system' | 'aws_s3' | 'manual' | 'admin_console';
   status: string | null;
   message: string | null;
   payload: Record<string, any>;
