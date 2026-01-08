@@ -6,6 +6,9 @@ import { decrypt, encrypt } from '@/lib/crypto';
 import { fetchAllSettings, updateSetting, updateEmailSettings, FileMakerApiError } from '@/lib/filemaker/api-client';
 import { z } from 'zod';
 
+// Use Node.js runtime for crypto operations
+export const runtime = 'nodejs';
+
 /**
  * GET /api/servers/[id]/fm-settings
  * Fetch FileMaker Server settings
