@@ -23,6 +23,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { SettingsPanel } from './fm-settings/settings-panel';
 
 type ServerStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown';
 
@@ -151,10 +152,11 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="backup">Backup Monitoring</TabsTrigger>
             <TabsTrigger value="metadata">FileMaker Metadata</TabsTrigger>
+            <TabsTrigger value="settings">FileMaker Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-4 mt-4">
@@ -486,6 +488,18 @@ export function ServerEditDialog({ server, open, onOpenChange, onSave, hosts }: 
                 </div>
               )}
             </div>
+
+          <TabsContent value="settings" className="space-y-4 mt-4">
+            <div className="max-h-[600px] overflow-y-auto pr-2">
+              {editedServer?.id ? (
+                <SettingsPanel serverId={editedServer.id} />
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Save server first to access settings</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
           </TabsContent>
         </Tabs>
 
